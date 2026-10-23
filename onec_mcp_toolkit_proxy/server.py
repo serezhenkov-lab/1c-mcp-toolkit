@@ -14,7 +14,7 @@ import asyncio
 import json
 import logging
 import os
-from contextlib import asynccontextmanager, suppress
+from contextlib import asynccontextmanager
 from typing import Any, Optional
 
 import anyio
@@ -35,6 +35,7 @@ from mcp.server.streamable_http import (
 from . import __version__
 from .command_queue import command_queue, channel_command_queue
 from .config import settings
+from .file_transport import FileTransport, configured_channels
 from .mcp_handler import get_mcp_server
 from .channel_registry import channel_registry, ChannelRegistry, DEFAULT_CHANNEL
 from .channel_middleware import ChannelMiddleware
@@ -215,13 +216,27 @@ async def lifespan(app: Starlette):
         cleanup_task = asyncio.create_task(
             cleanup_abandoned_commands(), name="command-queue-cleanup"
         )
+        file_tasks = []
+        app.state.file_bridges = {}
         try:
+            channels = configured_channels()
+            for channel in channels:
+                root = os.path.join(os.environ["FILE_BRIDGE_ROOT"], channel)
+                bridge = FileTransport(root, channel, channel_command_queue,
+                                       settings.timeout, CommandResult)
+                app.state.file_bridges[channel] = bridge
+                file_tasks.append(asyncio.create_task(bridge.run(), name=f"rdp-file-{channel}"))
             yield
         finally:
+            for file_task in file_tasks:
+                file_task.cancel()
             cleanup_task.cancel()
             with anyio.CancelScope(shield=True):
-                with suppress(asyncio.CancelledError):
-                    await cleanup_task
+                await asyncio.gather(*file_tasks, cleanup_task, return_exceptions=True)
+                # Также закрывает сеансы задач, отменённых до первого запуска.
+                for bridge in app.state.file_bridges.values():
+                    (bridge.directory / 'session.json').unlink(missing_ok=True)
+                app.state.file_bridges = {}
     
     # Shutdown
     logger.info("1C MCP Toolkit Proxy shutting down")
@@ -283,6 +298,9 @@ async def poll_command(request: Request) -> Response:
     raw_channel = request.query_params.get("channel", DEFAULT_CHANNEL)
     channel = ChannelRegistry.validate_channel_id(raw_channel)
     
+    if channel in getattr(request.app.state, "file_bridges", {}):
+        return JSONResponse({"error": "Channel reserved for file transport"}, status_code=409)
+
     timeout_param = request.query_params.get("timeout")
     poll_timeout = float(timeout_param) if timeout_param else float(settings.poll_timeout)
     
