@@ -20,6 +20,7 @@ import unicodedata
 from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
 from mcp.server.fastmcp import FastMCP, Context
+from .channel_registry import stdio_channel
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ImageContent, TextContent
 from pydantic import Field, ValidationError, BeforeValidator
@@ -415,7 +416,7 @@ def _get_channel_from_context(ctx: Context) -> str:
     Returns:
         Channel ID or "default" if not found.
     """
-    channel = "default"
+    channel = stdio_channel.get() or "default"
     try:
         if ctx.request_context and ctx.request_context.request:
             channel = ctx.request_context.request.scope.get("channel", "default")

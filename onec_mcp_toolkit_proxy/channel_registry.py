@@ -7,6 +7,7 @@ the correspondence between MCP session IDs and channel IDs.
 Validates: Requirements 4.1, 4.2, 4.3
 """
 
+from contextvars import ContextVar
 from typing import Dict
 import re
 import logging
@@ -124,3 +125,6 @@ class ChannelRegistry:
 
 # Global instance
 channel_registry = ChannelRegistry()
+
+# Один явный канал на stdio-процесс; HTTP продолжает брать канал из запроса.
+stdio_channel = ContextVar("stdio_channel", default=None)

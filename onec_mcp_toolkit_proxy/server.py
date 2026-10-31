@@ -10,14 +10,11 @@ Provides endpoints for:
 Validates: Requirements 1.4, 2.1, 3.1, 4.1, 5.3, 5.4, 6.2, 6.3, 6.4
 """
 
-import asyncio
 import json
 import logging
 import os
 from contextlib import asynccontextmanager
-from typing import Any, Optional
 
-import anyio
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
@@ -35,7 +32,9 @@ from mcp.server.streamable_http import (
 from . import __version__
 from .command_queue import command_queue, channel_command_queue
 from .config import settings
-from .file_transport import FileTransport, configured_channels
+from .file_transport import configured_channels
+from .file_runtime import file_runtime
+from .result_models import CommandResult
 from .mcp_handler import get_mcp_server
 from .channel_registry import channel_registry, ChannelRegistry, DEFAULT_CHANNEL
 from .channel_middleware import ChannelMiddleware
@@ -186,22 +185,6 @@ class MCPLoggingMiddleware(BaseHTTPMiddleware):
         return response
 
 
-COMMAND_CLEANUP_INTERVAL = 60.0
-
-
-async def cleanup_abandoned_commands() -> None:
-    """Safety net for commands left without an active result waiter."""
-    max_age = max(float(settings.timeout) * 2, 300.0)
-    while True:
-        await asyncio.sleep(COMMAND_CLEANUP_INTERVAL)
-        try:
-            removed = await channel_command_queue.cleanup_expired(max_age)
-            if removed:
-                logger.warning("Removed %d abandoned commands", removed)
-        except Exception:
-            logger.exception("Failed to clean up abandoned commands")
-
-
 @asynccontextmanager
 async def lifespan(app: Starlette):
     """Lifespan context manager for startup and shutdown events."""
@@ -211,71 +194,19 @@ async def lifespan(app: Starlette):
     logger.info(f"Command timeout: {settings.timeout}s")
     logger.info("MCP server available at /mcp endpoint")
     
-    # Start the MCP session manager
     async with mcp_server.session_manager.run():
-        cleanup_task = asyncio.create_task(
-            cleanup_abandoned_commands(), name="command-queue-cleanup"
-        )
-        file_tasks = []
-        app.state.file_bridges = {}
-        try:
-            channels = configured_channels()
-            for channel in channels:
-                root = os.path.join(os.environ["FILE_BRIDGE_ROOT"], channel)
-                bridge = FileTransport(root, channel, channel_command_queue,
-                                       settings.timeout, CommandResult)
-                app.state.file_bridges[channel] = bridge
-                file_tasks.append(asyncio.create_task(bridge.run(), name=f"rdp-file-{channel}"))
-            yield
-        finally:
-            for file_task in file_tasks:
-                file_task.cancel()
-            cleanup_task.cancel()
-            with anyio.CancelScope(shield=True):
-                await asyncio.gather(*file_tasks, cleanup_task, return_exceptions=True)
-                # Также закрывает сеансы задач, отменённых до первого запуска.
-                for bridge in app.state.file_bridges.values():
-                    (bridge.directory / 'session.json').unlink(missing_ok=True)
+        async with file_runtime(configured_channels(), os.getenv("FILE_BRIDGE_ROOT")) as runtime:
+            app.state.file_bridges = runtime.bridges
+            try:
+                yield
+            finally:
                 app.state.file_bridges = {}
-    
+
     # Shutdown
     logger.info("1C MCP Toolkit Proxy shutting down")
 
 
 # Pydantic models for request/response validation
-class CommandResult(BaseModel):
-    """Result from 1C processing."""
-    id: str
-    success: bool
-    data: Optional[Any] = None
-    schema: Optional[Any] = None
-    error: Optional[str] = None
-    count: Optional[int] = None
-    # Optional metadata fields for list/pagination responses (e.g., get_metadata list mode)
-    truncated: Optional[bool] = None
-    limit: Optional[int] = None
-    returned: Optional[int] = None
-    offset: Optional[int] = None
-    has_more: Optional[bool] = None
-    next_offset: Optional[int] = None
-    configuration: Optional[Any] = None
-    extension: Optional[str] = None
-    # Cursor pagination fields for get_event_log
-    last_date: Optional[str] = None                  # Cursor - last record date
-    next_same_second_offset: Optional[int] = None    # Accumulated offset for next page
-    # submit_for_deanonymization acknowledgement field
-    received: Optional[bool] = None
-    # Screenshot result fields for get_screenshot
-    image_base64: Optional[str] = None
-    mime_type: Optional[str] = None
-    window_rect: Optional[Any] = None
-    grid_coords: Optional[Any] = None
-    overlays: Optional[Any] = None
-    overlay_failures: Optional[Any] = None
-    capture_complete: Optional[Any] = None
-    foreground_window: Optional[Any] = None
-
-
 class HealthResponse(BaseModel):
     """Health check response."""
     status: str
