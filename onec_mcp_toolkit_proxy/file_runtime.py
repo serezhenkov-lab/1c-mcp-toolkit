@@ -1,4 +1,4 @@
-"""Общий жизненный цикл файловых каналов для HTTP и stdio."""
+"""Жизненный цикл файловых каналов HTTP-прокси."""
 import asyncio
 import logging
 from contextlib import ExitStack, asynccontextmanager
