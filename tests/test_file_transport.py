@@ -47,6 +47,17 @@ class FileTransportTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.bridge.active, command_id)
         self.assertFalse((self.bridge.directory / (second + '.request.json')).exists())
 
+    async def test_source_metadata_preserves_absent_null_and_value(self):
+        for metadata in ({}, {'base': None}, {'base': 'test-base'}):
+            with self.subTest(metadata=metadata):
+                command_id = await self.issue()
+                write_json(self.bridge.directory / (command_id + '.response.json'),
+                           {'id': command_id, 'success': True, **metadata})
+                await self.bridge.step()
+                result = await self.queue.wait_for_result(command_id, 1)
+                self.assertEqual('base' in result, 'base' in metadata)
+                self.assertEqual(result.get('base'), metadata.get('base'))
+
     async def test_other_channel_is_not_consumed(self):
         await self.queue.add_command('other', 'get_metadata', {})
         await self.bridge.step()

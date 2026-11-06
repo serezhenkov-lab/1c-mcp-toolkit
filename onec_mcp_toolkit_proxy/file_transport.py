@@ -72,7 +72,10 @@ class FileTransport:
             result = self.result_model(**body)
             if result.id != self.active:
                 raise ValueError('File response id mismatch')
-            await self.queue.set_result(self.active, result.model_dump(exclude={'id'}, exclude_none=True))
+            payload = result.model_dump(exclude={'id'}, exclude_none=True)
+            if 'base' in result.model_fields_set:
+                payload['base'] = result.base
+            await self.queue.set_result(self.active, payload)
             for suffix in ('.response.json', '.running', '.request.json'):
                 (self.directory / (self.active + suffix)).unlink(missing_ok=True)
             self.active = None
