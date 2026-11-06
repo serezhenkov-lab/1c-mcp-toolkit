@@ -9,6 +9,8 @@ from datetime import timedelta
 from pathlib import Path
 from uuid import uuid4
 
+import anyio
+
 logger = logging.getLogger(__name__)
 
 
@@ -90,6 +92,19 @@ class FileTransport:
         body['expires_at'] = (command.created_at + timedelta(seconds=self.timeout)).strftime('%Y%m%d%H%M%S')
         write_json(self.directory / (command.id + '.request.json'), body)
 
+    async def revoke_session(self):
+        """Дождаться завершения краткого чтения session.json клиентом Windows/RDP."""
+        with anyio.CancelScope(shield=True):
+            for attempt in range(50):
+                try:
+                    (self.directory / 'session.json').unlink(missing_ok=True)
+                    return
+                except OSError as exc:
+                    # Только sharing/lock violation: ошибки прав не скрываем.
+                    if getattr(exc, 'winerror', None) not in (32, 33) or attempt == 49:
+                        raise
+                    await asyncio.sleep(0.1)
+
     async def run(self):
         try:
             while True:
@@ -100,4 +115,4 @@ class FileTransport:
                              self.channel)
         finally:
             # Старые задания не должны исполняться после штатной остановки прокси.
-            (self.directory / 'session.json').unlink(missing_ok=True)
+            await self.revoke_session()

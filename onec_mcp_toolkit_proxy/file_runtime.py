@@ -59,7 +59,12 @@ async def file_runtime(channels, root):
                 task.cancel()
             with anyio.CancelScope(shield=True):
                 await asyncio.gather(*tasks, return_exceptions=True)
-                for bridge in bridges.values():
-                    (bridge.directory / 'session.json').unlink(missing_ok=True)
+                # Проверяем все каналы, даже если один файл остался заблокирован.
+                revoked = await asyncio.gather(
+                    *(bridge.revoke_session() for bridge in bridges.values()),
+                    return_exceptions=True)
                 for consumer in consumers:
                     consumer_registry.retire(consumer)
+                for result in revoked:
+                    if isinstance(result, BaseException):
+                        raise result
