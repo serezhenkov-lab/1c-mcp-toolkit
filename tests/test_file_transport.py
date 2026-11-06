@@ -2,6 +2,9 @@ import asyncio
 import json
 import tempfile
 import unittest
+import sys
+from pathlib import Path
+from unittest.mock import patch, AsyncMock
 from datetime import datetime, timedelta
 
 from onec_mcp_toolkit_proxy.command_queue import ChannelCommandQueue
@@ -46,6 +49,17 @@ class FileTransportTests(unittest.IsolatedAsyncioTestCase):
         await self.bridge.step()
         self.assertEqual(self.bridge.active, command_id)
         self.assertFalse((self.bridge.directory / (second + '.request.json')).exists())
+
+    async def test_source_metadata_preserves_absent_null_and_value(self):
+        for metadata in ({}, {'base': None}, {'base': 'test-base'}):
+            with self.subTest(metadata=metadata):
+                command_id = await self.issue()
+                write_json(self.bridge.directory / (command_id + '.response.json'),
+                           {'id': command_id, 'success': True, **metadata})
+                await self.bridge.step()
+                result = await self.queue.wait_for_result(command_id, 1)
+                self.assertEqual('base' in result, 'base' in metadata)
+                self.assertEqual(result.get('base'), metadata.get('base'))
 
     async def test_other_channel_is_not_consumed(self):
         await self.queue.add_command('other', 'get_metadata', {})
@@ -105,6 +119,60 @@ class FileTransportTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(asyncio.CancelledError):
             await task
         self.assertFalse((self.bridge.directory / 'session.json').exists())
+
+    async def test_session_revocation_retries_sharing_violation(self):
+        original_unlink = Path.unlink
+        attempts = []
+        def busy_then_free(path, *args, **kwargs):
+            attempts.append(path)
+            if len(attempts) <= 2:
+                error = PermissionError('File is being read')
+                error.winerror = 32
+                raise error
+            return original_unlink(path, *args, **kwargs)
+        with patch.object(Path, 'unlink', busy_then_free):
+            await self.bridge.revoke_session()
+        self.assertEqual(len(attempts), 3)
+        self.assertFalse((self.bridge.directory / 'session.json').exists())
+
+    async def test_session_revocation_reports_persistent_lock_and_access_denied(self):
+        for winerror, attempts in ((32, 50), (33, 50), (5, 1)):
+            with self.subTest(winerror=winerror):
+                error = PermissionError('Locked or denied')
+                error.winerror = winerror
+                with patch.object(Path, 'unlink', side_effect=error) as unlink, \
+                        patch('onec_mcp_toolkit_proxy.file_transport.asyncio.sleep', new_callable=AsyncMock):
+                    with self.assertRaises(PermissionError):
+                        await self.bridge.revoke_session()
+                self.assertEqual(unlink.call_count, attempts)
+                self.assertTrue((self.bridge.directory / 'session.json').exists())
+
+    @unittest.skipUnless(sys.platform == 'win32', 'Windows file sharing semantics')
+    async def test_shutdown_waits_for_windows_reader(self):
+        import ctypes
+        from ctypes import wintypes
+        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+        kernel.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
+                                      ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+        kernel.CreateFileW.restype = wintypes.HANDLE
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel.CloseHandle.restype = wintypes.BOOL
+        path = self.bridge.directory / 'session.json'
+        # GENERIC_READ, FILE_SHARE_READ (without FILE_SHARE_DELETE), OPEN_EXISTING.
+        handle = kernel.CreateFileW(str(path), 0x80000000, 1, None, 3, 0, None)
+        self.assertNotEqual(handle, ctypes.c_void_p(-1).value)
+        task = asyncio.create_task(self.bridge.run())
+        try:
+            await asyncio.sleep(0.01)
+            task.cancel()
+            await asyncio.sleep(0.15)
+            self.assertFalse(task.done())
+            self.assertTrue(path.exists())
+        finally:
+            kernel.CloseHandle(handle)
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+        self.assertFalse(path.exists())
 
     async def test_failed_channel_does_not_stop_other_channel(self):
         command_id = await self.issue()

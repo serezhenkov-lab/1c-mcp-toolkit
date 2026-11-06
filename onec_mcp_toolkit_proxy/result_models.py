@@ -7,6 +7,7 @@ class CommandResult(BaseModel):
     """Result from 1C processing."""
     id: str
     success: bool
+    base: Optional[str] = None
     data: Optional[Any] = None
     schema: Optional[Any] = None
     error: Optional[str] = None

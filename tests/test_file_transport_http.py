@@ -13,6 +13,8 @@ from starlette.testclient import TestClient
 
 from onec_mcp_toolkit_proxy.server import app
 from onec_mcp_toolkit_proxy.file_transport import write_json
+from onec_mcp_toolkit_proxy.consumer_registry import consumer_registry
+from onec_mcp_toolkit_proxy import server
 
 
 @contextmanager
@@ -23,6 +25,34 @@ def verify_sessions_removed(test, root):
 
 
 class HttpIntegrationTests(unittest.TestCase):
+    def setUp(self):
+        self.registry_patch = patch.object(consumer_registry, 'consumers', {})
+        self.registry_patch.start()
+        self.addCleanup(self.registry_patch.stop)
+        # MCP SDK permits one lifespan per session manager instance.
+        manager_patch = patch.object(server.mcp_server, '_session_manager', None)
+        manager_patch.start()
+        self.addCleanup(manager_patch.stop)
+        transport_patch = patch.object(server, 'streamable_app', server.McpRequestIdMiddleware(
+            server.mcp_server.streamable_http_app()))
+        transport_patch.start()
+        self.addCleanup(transport_patch.stop)
+
+    def test_file_channel_cannot_be_taken_by_server_host_after_lease_timeout(self):
+        with tempfile.TemporaryDirectory() as root, patch.dict(os.environ, {
+            'FILE_BRIDGE_ROOT': root, 'FILE_BRIDGE_CHANNELS': 'reserved'
+        }), TestClient(app) as client:
+            owner = consumer_registry.consumers['reserved']
+            owner.seen = time.monotonic() - 120
+            response = client.post('/1c/host/register?channel=reserved', json={
+                'version': 1, 'finalization_owner': 'proxy', 'base': 'base',
+                'registration': 'reg', 'user': '', 'instance': 'instance',
+                'epoch': 'epoch', 'tools': ['execute_query']})
+            self.assertEqual(response.status_code, 409)
+            self.assertIs(consumer_registry.consumers['reserved'], owner)
+            self.assertEqual(client.get('/1c/poll?channel=reserved').status_code, 409)
+        self.assertTrue(owner.retired)
+
     def test_mcp_file_roundtrip(self):
         with tempfile.TemporaryDirectory() as root, patch.dict(os.environ, {
             'FILE_BRIDGE_ROOT': root, 'FILE_BRIDGE_CHANNELS': 'rdp-test,1703784',
@@ -99,5 +129,24 @@ class HttpIntegrationTests(unittest.TestCase):
 
     def test_http_poll_remains_available_without_file_mode(self):
         with patch.dict(os.environ, {'FILE_BRIDGE_ROOT': ''}):
-            client = TestClient(app)
-            self.assertEqual(client.get('/1c/poll?channel=rdp-test').status_code, 204)
+            with TestClient(app) as client, ThreadPoolExecutor() as pool:
+                self.assertEqual(client.get('/1c/poll?channel=http-test').status_code, 204)
+                result = pool.submit(client.post, '/api/execute_query?channel=http-test',
+                                     json={'query': 'ВЫБРАТЬ 1'})
+                deadline = time.monotonic() + 3
+                command = None
+                while time.monotonic() < deadline:
+                    response = client.get('/1c/poll?channel=http-test')
+                    if response.status_code == 200:
+                        command = response.json()
+                        break
+                    time.sleep(0.02)
+                self.assertIsNotNone(command)
+                accepted = client.post('/1c/result?channel=http-test', json={
+                    'id': command['id'], 'success': True, 'base': 'http-test-base',
+                    'data': [{'http_marker': 843}], 'count': 1})
+                self.assertEqual(accepted.status_code, 200)
+                response = result.result(timeout=3)
+                self.assertEqual(response.status_code, 200)
+                self.assertIn('843', response.text)
+                self.assertIn('http-test-base', response.text)

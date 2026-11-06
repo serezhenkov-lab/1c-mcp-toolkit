@@ -12,6 +12,7 @@ from .command_queue import channel_command_queue
 from .config import settings
 from .file_transport import FileTransport
 from .result_models import CommandResult
+from .consumer_registry import consumer_registry
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,7 @@ async def cleanup_abandoned_commands() -> None:
 async def file_runtime(channels, root):
     bridges = {}
     tasks = []
+    consumers = []
     with ExitStack() as locks:
         try:
             # Захватить все каналы до публикации новых current.json.
@@ -44,6 +46,7 @@ async def file_runtime(channels, root):
                 locks.enter_context(ChannelLock(directory))
                 check_unresolved(directory)
             for channel in channels:
+                consumers.append(consumer_registry.bind(channel, 'file'))
                 bridge = FileTransport(Path(root) / channel, channel,
                                        channel_command_queue, settings.timeout, CommandResult)
                 bridges[channel] = bridge
@@ -56,5 +59,12 @@ async def file_runtime(channels, root):
                 task.cancel()
             with anyio.CancelScope(shield=True):
                 await asyncio.gather(*tasks, return_exceptions=True)
-                for bridge in bridges.values():
-                    (bridge.directory / 'session.json').unlink(missing_ok=True)
+                # Проверяем все каналы, даже если один файл остался заблокирован.
+                revoked = await asyncio.gather(
+                    *(bridge.revoke_session() for bridge in bridges.values()),
+                    return_exceptions=True)
+                for consumer in consumers:
+                    consumer_registry.retire(consumer)
+                for result in revoked:
+                    if isinstance(result, BaseException):
+                        raise result
