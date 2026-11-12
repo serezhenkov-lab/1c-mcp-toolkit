@@ -338,64 +338,6 @@
 																<Event name="ПриИзменении">ФорматОтветаВстроенныйПриИзменении</Event>
 															</Events>
 														</RadioButtonField>
-														<InputField name="ПолеРежимПодтверждения" id="252">
-															<DataPath>РежимПодтвержденияОпасныхОпераций</DataPath>
-															<Title>
-																<v8:item>
-																	<v8:lang>ru</v8:lang>
-																	<v8:content>Опасные операции</v8:content>
-																</v8:item>
-															</Title>
-															<ClearButton>false</ClearButton>
-															<ListChoiceMode>true</ListChoiceMode>
-															<TextEdit>false</TextEdit>
-															<ChoiceList>
-																<xr:Item>
-																	<xr:Presentation/>
-																	<xr:CheckState>0</xr:CheckState>
-																	<xr:Value xsi:type="FormChoiceListDesTimeValue">
-																		<Presentation>
-																			<v8:item>
-																				<v8:lang>ru</v8:lang>
-																				<v8:content>Запрещать</v8:content>
-																			</v8:item>
-																		</Presentation>
-																		<Value xsi:type="xs:string">deny</Value>
-																	</xr:Value>
-																</xr:Item>
-																<xr:Item>
-																	<xr:Presentation/>
-																	<xr:CheckState>0</xr:CheckState>
-																	<xr:Value xsi:type="FormChoiceListDesTimeValue">
-																		<Presentation>
-																			<v8:item>
-																				<v8:lang>ru</v8:lang>
-																				<v8:content>Спрашивать каждый раз</v8:content>
-																			</v8:item>
-																		</Presentation>
-																		<Value xsi:type="xs:string">ask</Value>
-																	</xr:Value>
-																</xr:Item>
-																<xr:Item>
-																	<xr:Presentation/>
-																	<xr:CheckState>0</xr:CheckState>
-																	<xr:Value xsi:type="FormChoiceListDesTimeValue">
-																		<Presentation>
-																			<v8:item>
-																				<v8:lang>ru</v8:lang>
-																				<v8:content>Разрешить всё в текущем сеансе</v8:content>
-																			</v8:item>
-																		</Presentation>
-																		<Value xsi:type="xs:string">session_allow</Value>
-																	</xr:Value>
-																</xr:Item>
-															</ChoiceList>
-															<ContextMenu name="ПолеРежимПодтвержденияКонтекстноеМеню" id="253"/>
-															<ExtendedTooltip name="ПолеРежимПодтвержденияРасширеннаяПодсказка" id="254"/>
-															<Events>
-																<Event name="OnChange">РежимПодтвержденияПриИзменении</Event>
-															</Events>
-														</InputField>
 														<UsualGroup name="ГруппаМCPИнструменты" id="124">
 															<Title>
 																<v8:item>
@@ -653,6 +595,64 @@
 														<Event name="ПриИзменении">ДобавлятьИнформациюОБазеПриИзменении</Event>
 													</Events>
 												</CheckBoxField>
+												<InputField name="ПолеРежимПодтверждения" id="252">
+													<DataPath>РежимПодтвержденияОпасныхОпераций</DataPath>
+													<Title>
+														<v8:item>
+															<v8:lang>ru</v8:lang>
+															<v8:content>Опасные операции</v8:content>
+														</v8:item>
+													</Title>
+													<ClearButton>false</ClearButton>
+													<ListChoiceMode>true</ListChoiceMode>
+													<TextEdit>false</TextEdit>
+													<ChoiceList>
+														<xr:Item>
+															<xr:Presentation/>
+															<xr:CheckState>0</xr:CheckState>
+															<xr:Value xsi:type="FormChoiceListDesTimeValue">
+																<Presentation>
+																	<v8:item>
+																		<v8:lang>ru</v8:lang>
+																		<v8:content>Запрещать</v8:content>
+																	</v8:item>
+																</Presentation>
+																<Value xsi:type="xs:string">deny</Value>
+															</xr:Value>
+														</xr:Item>
+														<xr:Item>
+															<xr:Presentation/>
+															<xr:CheckState>0</xr:CheckState>
+															<xr:Value xsi:type="FormChoiceListDesTimeValue">
+																<Presentation>
+																	<v8:item>
+																		<v8:lang>ru</v8:lang>
+																		<v8:content>Спрашивать каждый раз</v8:content>
+																	</v8:item>
+																</Presentation>
+																<Value xsi:type="xs:string">ask</Value>
+															</xr:Value>
+														</xr:Item>
+														<xr:Item>
+															<xr:Presentation/>
+															<xr:CheckState>0</xr:CheckState>
+															<xr:Value xsi:type="FormChoiceListDesTimeValue">
+																<Presentation>
+																	<v8:item>
+																		<v8:lang>ru</v8:lang>
+																		<v8:content>Разрешить всё в текущем сеансе</v8:content>
+																	</v8:item>
+																</Presentation>
+																<Value xsi:type="xs:string">session_allow</Value>
+															</xr:Value>
+														</xr:Item>
+													</ChoiceList>
+													<ContextMenu name="ПолеРежимПодтвержденияКонтекстноеМеню" id="253"/>
+													<ExtendedTooltip name="ПолеРежимПодтвержденияРасширеннаяПодсказка" id="254"/>
+													<Events>
+														<Event name="OnChange">РежимПодтвержденияПриИзменении</Event>
+													</Events>
+												</InputField>
 												<UsualGroup name="ГруппаПараллельноеВыполнение" id="230">
 													<ShowTitle>false</ShowTitle>
 													<Group>AlwaysHorizontal</Group>
