@@ -1,0 +1,44 @@
+schema: openspec-1c
+context: |
+  Прочитай openspec/project-rules.md до выбора имени change и создания артефактов.
+  Проект — внешний MCP Toolkit EPF, Python proxy и встроенный HTTP runtime.
+  Основную конфигурацию прикладной базы не изменяем. База исходников — v1.10.0.
+  Первая очередь проверена в отдельной файловой базе на платформе 8.3.27.2342.
+  Работающая установка и её активные настройки не обновляются; тестовая проверка
+  не подтверждает установленную EPF или пользовательскую приёмку.
+  Спецификация не является разрешением на реализацию или изменение настроек базы.
+operations:
+  archive:
+    guidance:
+      - Сохранять estimate.md с историей, если он существует, и проверять ссылки единого журнала .codex/time-tracking.md без переноса или повторного начисления интервалов.
+
+# Project context (optional)
+# Add only constraints that should guide OpenSpec artifacts and workflows.
+# Include constraints an agent cannot infer by reading the code.
+# Keep general project documentation and discoverable codebase facts out.
+# Example:
+#   context: |
+#     Designs and tasks must cover Windows, macOS, and Linux
+#     Write all artifacts in Spanish
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
