@@ -95,6 +95,17 @@
 					<TextColor>web:Red</TextColor>
 					<ExtendedTooltip name="КнопкаОтклонитьРасширеннаяПодсказка" id="28"/>
 				</Button>
+				<Button name="КнопкаРазрешитьВсеВТекущемСеансе" id="29">
+					<Type>UsualButton</Type>
+					<CommandName>Form.Command.РазрешитьВсеВТекущемСеансе</CommandName>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Разрешить всё в текущем сеансе</v8:content>
+						</v8:item>
+					</Title>
+					<ExtendedTooltip name="КнопкаРазрешитьВсеВТекущемСеансеРасширеннаяПодсказка" id="30"/>
+				</Button>
 			</ChildItems>
 		</UsualGroup>
 	</ChildItems>
@@ -124,6 +135,15 @@
 		</Command>
 		<Command name="Отклонить" id="2">
 			<Action>Отклонить</Action>
+		</Command>
+		<Command name="РазрешитьВсеВТекущемСеансе" id="3">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Разрешить всё в текущем сеансе</v8:content>
+				</v8:item>
+			</Title>
+			<Action>РазрешитьВсеВТекущемСеансе</Action>
 		</Command>
 	</Commands>
 	<Events>
