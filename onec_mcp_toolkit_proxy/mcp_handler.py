@@ -691,8 +691,10 @@ async def execute_code(ctx: Context, code: str, execution_context: Literal["serv
             logger.warning(f"Blocked dangerous operation: {found_dangerous}")
             return {
                 "success": False,
-                "error": f"Операция запрещена: код содержит опасные ключевые слова: {keywords_str} / "
-                         f"Operation not allowed: code contains dangerous keywords: {keywords_str}",
+                "error": "Запрет proxy: ALLOW_DANGEROUS_WITH_APPROVAL=false. "
+                         "Режим разрешений формы Toolkit не отменяет этот запрет. "
+                         f"Опасные ключевые слова: {keywords_str} / "
+                         f"Proxy blocked dangerous code: {keywords_str}",
                 "dangerous_keywords": found_dangerous,
             }
     else:

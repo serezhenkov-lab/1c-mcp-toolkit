@@ -338,16 +338,64 @@
 																<Event name="ПриИзменении">ФорматОтветаВстроенныйПриИзменении</Event>
 															</Events>
 														</RadioButtonField>
-														<CheckBoxField name="ФлагРазрешатьОпасныеОперацииСПодтверждением" id="53">
-															<DataPath>РазрешатьОпасныеОперацииСПодтверждением</DataPath>
+														<InputField name="ПолеРежимПодтверждения" id="252">
+															<DataPath>РежимПодтвержденияОпасныхОпераций</DataPath>
 															<Title>
 																<v8:item>
 																	<v8:lang>ru</v8:lang>
-																	<v8:content>Разрешать опасные операции с подтверждением</v8:content>
+																	<v8:content>Опасные операции</v8:content>
 																</v8:item>
 															</Title>
-															<ExtendedTooltip name="ФлагРазрешатьОпасныеОперацииСПодтверждениемРасширеннаяПодсказка" id="54"/>
-														</CheckBoxField>
+															<ClearButton>false</ClearButton>
+															<ListChoiceMode>true</ListChoiceMode>
+															<TextEdit>false</TextEdit>
+															<ChoiceList>
+																<xr:Item>
+																	<xr:Presentation/>
+																	<xr:CheckState>0</xr:CheckState>
+																	<xr:Value xsi:type="FormChoiceListDesTimeValue">
+																		<Presentation>
+																			<v8:item>
+																				<v8:lang>ru</v8:lang>
+																				<v8:content>Запрещать</v8:content>
+																			</v8:item>
+																		</Presentation>
+																		<Value xsi:type="xs:string">deny</Value>
+																	</xr:Value>
+																</xr:Item>
+																<xr:Item>
+																	<xr:Presentation/>
+																	<xr:CheckState>0</xr:CheckState>
+																	<xr:Value xsi:type="FormChoiceListDesTimeValue">
+																		<Presentation>
+																			<v8:item>
+																				<v8:lang>ru</v8:lang>
+																				<v8:content>Спрашивать каждый раз</v8:content>
+																			</v8:item>
+																		</Presentation>
+																		<Value xsi:type="xs:string">ask</Value>
+																	</xr:Value>
+																</xr:Item>
+																<xr:Item>
+																	<xr:Presentation/>
+																	<xr:CheckState>0</xr:CheckState>
+																	<xr:Value xsi:type="FormChoiceListDesTimeValue">
+																		<Presentation>
+																			<v8:item>
+																				<v8:lang>ru</v8:lang>
+																				<v8:content>Разрешить всё в текущем сеансе</v8:content>
+																			</v8:item>
+																		</Presentation>
+																		<Value xsi:type="xs:string">session_allow</Value>
+																	</xr:Value>
+																</xr:Item>
+															</ChoiceList>
+															<ContextMenu name="ПолеРежимПодтвержденияКонтекстноеМеню" id="253"/>
+															<ExtendedTooltip name="ПолеРежимПодтвержденияРасширеннаяПодсказка" id="254"/>
+															<Events>
+																<Event name="OnChange">РежимПодтвержденияПриИзменении</Event>
+															</Events>
+														</InputField>
 														<UsualGroup name="ГруппаМCPИнструменты" id="124">
 															<Title>
 																<v8:item>
@@ -790,39 +838,6 @@
 																</Button>
 															</ChildItems>
 														</UsualGroup>
-													</ChildItems>
-												</UsualGroup>
-												<UsualGroup name="ГруппаАвтоРазрешение" id="24">
-													<Title>
-														<v8:item>
-															<v8:lang>ru</v8:lang>
-															<v8:content>Автоматически разрешать операции</v8:content>
-														</v8:item>
-													</Title>
-													<Group>Vertical</Group>
-													<Representation>None</Representation>
-													<ExtendedTooltip name="ГруппаАвтоРазрешениеРасширеннаяПодсказка" id="25"/>
-													<ChildItems>
-														<CheckBoxField name="ФлагАвтоЗаписать" id="26">
-															<DataPath>АвтоРазрешитьЗаписать</DataPath>
-															<Title>
-																<v8:item>
-																	<v8:lang>ru</v8:lang>
-																	<v8:content>Записать</v8:content>
-																</v8:item>
-															</Title>
-															<ExtendedTooltip name="ФлагАвтоЗаписатьРасширеннаяПодсказка" id="27"/>
-														</CheckBoxField>
-														<CheckBoxField name="ФлагАвтоПривилегированныйРежим" id="28">
-															<DataPath>АвтоРазрешитьПривилегированныйРежим</DataPath>
-															<Title>
-																<v8:item>
-																	<v8:lang>ru</v8:lang>
-																	<v8:content>УстановитьПривилегированныйРежим</v8:content>
-																</v8:item>
-															</Title>
-															<ExtendedTooltip name="ФлагАвтоПривилегированныйРежимРасширеннаяПодсказка" id="29"/>
-														</CheckBoxField>
 													</ChildItems>
 												</UsualGroup>
 												<UsualGroup name="ГруппаУправлениеПодключением" id="5">
@@ -1653,6 +1668,21 @@
 		<Attribute name="ДеанонимизацияЧерезAPI" id="252">
 			<Type>
 				<v8:Type>xs:boolean</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="РежимПодтвержденияОпасныхОпераций" id="253">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Опасные операции</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>20</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
 			</Type>
 		</Attribute>
 	</Attributes>
