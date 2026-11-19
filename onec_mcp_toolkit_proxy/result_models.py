@@ -1,7 +1,7 @@
 """Общий формат ответа обработки для HTTP и файлового транспорта."""
 from typing import Any, Optional, Literal
 from .operation_progress import valid_progress
-from pydantic import BaseModel, StrictInt, model_validator
+from pydantic import BaseModel, StrictBool, StrictInt, model_validator
 
 
 class CommandResult(BaseModel):
@@ -13,6 +13,15 @@ class CommandResult(BaseModel):
     progress: Optional[dict[str, Any]] = None
     lifecycle_outcome: Optional[Literal['rejected', 'unknown']] = None
     rejection_reason: Optional[Literal['mode_deny', 'user_declined', 'approval_stale']] = None
+    execution_error: Optional[Literal[
+        'application_error', 'platform_runtime_error', 'permission_denied', 'connection_lost', 'toolkit_denied',
+    ]] = None
+    error_location: Optional[dict[str, Any]] = None
+    output_permission: Optional[StrictBool] = None
+    execution_ms: Optional[StrictInt] = None
+    error_chain: Optional[list[dict[str, Any]]] = None
+    stack: Optional[list[dict[str, Any]]] = None
+    hidden_toolkit_frames: Optional[StrictInt] = None
 
     @model_validator(mode='after')
     def validate_lifecycle(self):

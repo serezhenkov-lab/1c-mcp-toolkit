@@ -24,7 +24,7 @@
 6. Первый проход after остановился на request_conflict: сам проверочный скрипт прочитал UTF-8 код из JSON системной кодировкой Windows. Исправлено явным encoding="utf-8"; исходный неуспешный лог сохранён. Защита от изменённого содержимого сработала корректно.
 7. На окончательном коде proxy повторно проверены сохранённые succeeded/unknown, повтор DROP без запуска и количество обоих документов = 1. Оба OpenSpec change проходят strict validate; git diff --check успешен. 44 файла production-исходников 1С совпадают с манифестом TASK-017/7.2. Собственные тестовые процессы завершены, порт 17653 освобождён.
 
-Исходники воспроизведения: `tests/lifecycle/prepare_stand.py`, `serve_stand.py`, `run_probe.py before|after`. Сырые результаты и успешные/неуспешные проходы — [архив](evidence/lifecycle-runtime.zip), итог native и запросов данных — [probe.json](evidence/lifecycle-probe.json). Запуск тестового сервера предполагает одноразовый каталог `.local/lifecycle`; маркеры fault injection не следует переиспользовать для нового эксперимента.
+Исходники воспроизведения: `tests/lifecycle/prepare_stand.py`, `serve_stand.py`, `run_probe.py before|after`. Сырые результаты и успешные/неуспешные проходы — архив (локальный путь `.local/openspec-evidence/2026-11-19-rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/lifecycle-runtime.zip`), итог native и запросов данных — probe.json (локальный путь `.local/openspec-evidence/2026-11-19-rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/lifecycle-probe.json`). Запуск тестового сервера предполагает одноразовый каталог `.local/lifecycle`; маркеры fault injection не следует переиспользовать для нового эксперимента.
 
 ## Оставшаяся работа и сверка unknown
 

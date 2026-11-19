@@ -6,7 +6,7 @@
 
 Уровни: runtime_local — протокол живого стенда (может включать отдельно обозначенные инъекции); local_tests — локальные тесты без нового runtime; historical_local — сохранённое доказательство прежней матрицы, не перепроверенное на текущем бинарнике; document — документальная фиксация.
 
-[Исторические 70 сценариев](task074-scenario-matrix-20261114.md) сохранены. [JSON и хеши](evidence/task074-scenario-matrix.json). [Итог приёмки](task074-acceptance.md). Полная приёмка **0/6**, задачи **13/42**; это разные показатели.
+[Исторические 70 сценариев](task074-scenario-matrix-20261114.md) сохранены. JSON и хеши (локальный путь `openspec/changes/upravlenie-test-klientom/evidence/task074-scenario-matrix.json`). [Итог приёмки](task074-acceptance.md). Полная приёмка **0/6**, задачи **13/42**; это разные показатели.
 
 Охват: локально: 42; частично: 44; документально: 2; не проверено: 6. Это не процент приёмки.
 
@@ -16,7 +16,7 @@
 |---|---|---|---|
 | TI-01/1 | Потерян ответ после записи | локально / runtime_local | [lost-response.md](lost-response.md) — 60/60 сохранённых проверок на HTTP/file/embedded, файловая база: потерян ответ после UI-записи, один документ и тот же operation_id. Клиент-серверный режим не проверен. |
 | TI-01/2 | Конфликт ключа | локально / runtime_local | [queue1-current.md](queue1-current.md) — Общий lifecycle: conflict/изоляция и публичные test_* подтверждены локальными протоколами HTTP/file/embedded. Это не полная средовая матрица. |
-| TI-01/3 | Исход неизвестен | локально / runtime_local | [../rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/file-recovery.md](../rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/file-recovery.md) — Unknown после UI commit подтверждён прежним queue1-finish; новый file recovery 17/17 сохраняет unknown и один документ. Legacy/unclaimed и другие среды открыты. |
+| TI-01/3 | Исход неизвестен | локально / runtime_local | [../archive/2026-11-19-rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/file-recovery.md](../archive/2026-11-19-rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/file-recovery.md) — Unknown после UI commit подтверждён прежним queue1-finish; новый file recovery 17/17 сохраняет unknown и один документ. Legacy/unclaimed и другие среды открыты. |
 | TI-01a/1 | Чтение при исчерпанной квоте | локально / runtime_local | [lifecycle-fast.md](lifecycle-fast.md) — Status существующей операции без admission, квоты, прежние ключи, conflict/изоляция проверены на отдельной файловой 8.5.1.1529 и локально. Политика анонимизации не принята. |
 | TI-01a/2 | Прежние ключи и изоляция | локально / runtime_local | [lifecycle-fast.md](lifecycle-fast.md) — Status существующей операции без admission, квоты, прежние ключи, conflict/изоляция проверены на отдельной файловой 8.5.1.1529 и локально. Политика анонимизации не принята. |
 | TI-02/1 | Эквивалентные интерфейсы | частично / runtime_local | [native-scenario-cleanup.md](native-scenario-cleanup.md) — Нативный TI-05 и очистка прошли на трёх маршрутах файловой базы, 48/48. Все действия/отказы и клиент-серверный режим этим не покрыты. |

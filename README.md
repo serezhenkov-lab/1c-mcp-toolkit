@@ -38,6 +38,27 @@ MVP проверен на Windows, в тонком клиенте 1С 8.5.1.1529
 сеанса (`session_allow`). Режим можно переключить через MCP командой
 [`set_approval_mode`](docs/approval-control.md).
 
+## Расширенный ответ (Fork)
+
+В версии из текущих исходников флажок «Расширенный ответ (Fork)» находится на
+вкладке «Подключение» и включён по умолчанию. Его можно снять, чтобы вернуть
+обычный формат ответа.
+
+- `diagnostics.execution_ms` показывает время выполнения в 1С после очереди
+  и подтверждения. Поле доступно для `execute_code`, `execute_query`,
+  `get_object_by_link` и `find_references_to_object`. Для операции в журнале
+  замер можно получить вместе с поздним результатом через `get_operation`.
+- Для ошибок `execute_code` и `execute_code_operation` исходный текст сохраняется.
+  При простой ошибке на известной строке дублирующая цепочка и стек опускаются.
+  При вложенном сбое, например в подписке на проведение, `diagnostics.error_chain`
+  показывает причины, а `diagnostics.stack` — путь до сбоя, если его вернула 1С.
+  Из стека убираются только распознанные начальные кадры Toolkit.
+- При разборе отказа в журнале операций учитывается категория 1С. Право «Вывод»,
+  когда его удалось проверить, показывается отдельно в `diagnostics.permissions.output`.
+
+[Контракт расширенного ответа](openspec/specs/runtime-diagnostics/spec.md) ·
+[Результаты проверки](openspec/changes/archive/2026-11-19-rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/tasks/TASK-006.md)
+
 ## Что добавлено в форке
 
 - Обмен заданиями и результатами через каталог на перенаправленном диске RDP.
@@ -500,6 +521,11 @@ Skills содержат подробные инструкции и reference-д�
 
 Подробная документация доступна в **[README_FULL](./README_FULL.md)** 
 
-В разработке: [общий lifecycle операций в proxy](openspec/changes/rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/lifecycle-proxy-partial.md). Новые native MCP `execute_code_operation` и `get_operation` используют явно настроенный `OPERATION_JOURNAL_DIR`, сохраняют поздний результат и защищают повтор по request_id. Legacy `execute_code` сохраняет прежнее поведение. [Состояния подтверждения из 1С](openspec/changes/rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/lifecycle-approval.md) проверены через HTTP и файловый мост; интеграция `test_*` и полная приёмка ещё не завершены.
+В текущих исходниках native MCP `execute_code_operation` и `get_operation`
+используют явно настроенный `OPERATION_JOURNAL_DIR`. Журнал сохраняет поздний
+результат. Повтор с тем же `request_id` и теми же параметрами в том же канале
+возвращает ту же операцию. Обычный `execute_code` ожидает результат в рамках
+одного вызова. Приёмка второй очереди завершена. [Контракт журнала](openspec/changes/archive/2026-11-19-rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/lifecycle-proxy-partial.md) ·
+[Результаты приёмки](openspec/changes/archive/2026-11-19-rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/tasks/TASK-010.md)
 
 

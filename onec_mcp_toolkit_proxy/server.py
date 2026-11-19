@@ -223,14 +223,16 @@ class HealthResponse(BaseModel):
     mcp_endpoint: str
 
 
-def record_legacy_activity(request: Request, consumer) -> None:
+def record_legacy_activity(request: Request, consumer) -> bool:
     """Legacy routing may normalize invalid channels; contact must not do so."""
     channels = request.query_params.getlist('channel')
     if len(channels) > 1:
-        return
+        return False
     channel = (channels[0] if channels else '') or DEFAULT_CHANNEL
     if consumer is not None and CHANNEL_ID_PATTERN.fullmatch(channel) and channel == consumer.channel:
         consumer_registry.record_activity(consumer)
+        return True
+    return False
 
 
 async def poll_command(request: Request) -> Response:
@@ -263,7 +265,12 @@ async def poll_command(request: Request) -> Response:
     except ConsumerChanged as exc:
         return JSONResponse({'error': str(exc)}, status_code=409)
 
-    record_legacy_activity(request, consumer)
+    recorded = record_legacy_activity(request, consumer)
+    details = request.headers.get("x-toolkit-connection", "")
+    if recorded:
+        from .runtime_diagnostics import decode_connection_details
+        consumer.connection_details = decode_connection_details(details) if details and len(details) <= 1024 else None
+        consumer.connection_observed_at = time.monotonic() if consumer.connection_details else None
     
     logger.debug(f"1C poll request on channel '{channel}', timeout={poll_timeout}s")
     
@@ -309,7 +316,7 @@ async def channel_status(request: Request) -> JSONResponse:
     now = time.monotonic()
     return JSONResponse({
         'version': 1, 'channel': channel,
-        **consumer_registry.activity_status(channel, now),
+        **consumer_registry.connection_status(channel, now),
         **channel_command_queue.channel_status(channel, now),
     }, headers=headers)
 
@@ -343,7 +350,7 @@ async def receive_result(request: Request) -> JSONResponse:
             }
         )
     except ValidationError as e:
-        errors = e.errors(include_context=False)
+        errors = e.errors(include_context=False, include_input=False)
         error_messages = []
         for error in errors:
             loc = " -> ".join(str(l) for l in error.get("loc", []))
@@ -379,7 +386,7 @@ async def receive_result(request: Request) -> JSONResponse:
         accepted = await channel_command_queue.observe_operation(channel, result.id, result.lifecycle_event, result.lifecycle_seq, result.progress)
         return JSONResponse({'success': accepted}, status_code=200 if accepted else 409)
 
-    if result.error:
+    if result.error and not (command is not None and command.durable and command.tool == 'execute_code'):
         logger.warning(f"Command {result.id} failed: {result.error}")
     
     # Convert Pydantic model to dict for storage
@@ -398,6 +405,13 @@ async def receive_result(request: Request) -> JSONResponse:
     optional_meta_fields = (
         "lifecycle_outcome",
         "rejection_reason",
+        "execution_error",
+        "error_location",
+        "output_permission",
+        "execution_ms",
+        "error_chain",
+        "stack",
+        "hidden_toolkit_frames",
         "truncated",
         "limit",
         "returned",

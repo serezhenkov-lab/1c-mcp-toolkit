@@ -1,12 +1,14 @@
 """Native operation API; permission decisions remain in the 1C executor."""
 import asyncio
 import copy
+import json
 
 from .anonymizer import AnonymizerRegistry
 from .command_queue import channel_command_queue
 from .config import settings
 from .consumer_registry import consumer_registry, current_consumer, ConsumerChanged
 from .operation_journal import OperationError
+from .runtime_diagnostics import add_execution_diagnostics, apply_error_trace_policy
 from .tools import validate_execute_code_params
 
 
@@ -20,8 +22,12 @@ async def operation_status(channel, operation_id):
         store = channel_command_queue.operation_store()
         row = store.get(channel, operation_id)
         result = store.snapshot(channel, operation_id)
-        # Raw stored data never bypasses the configured outbound policy.
         owner = consumer_registry.consumers.get(channel)
+        if row['tool'] == 'execute_code':
+            enabled = (owner.diagnostics_enabled if owner and not owner.retired and owner.connection_details
+                       else json.loads(row['context'] or '{}').get('diagnostics_enabled', False))
+            add_execution_diagnostics(result, row, enabled)
+        # Raw stored data never bypasses the configured outbound policy.
         if result['result'] is not None and owner and not owner.retired and owner.mode == 'server_host' and owner.anon_confirm:
             return failure('anonymization_confirmation_required')
         if result['result'] is not None and settings.anonymization_enabled:
@@ -31,6 +37,8 @@ async def operation_status(channel, operation_id):
                 if settings.anonymization_dictionary_enabled and anon._dict_matcher is None:
                     return failure('operation_result_policy_not_ready')
                 result['result'] = anon.anonymize_response(copy.deepcopy(result['result']), row['tool'])
+                if 'diagnostics' in result:
+                    apply_error_trace_policy(result['diagnostics'], anon, row['tool'])
         result['success'] = True  # status read succeeded, not necessarily execution
         return result
     except OperationError as exc:
@@ -78,13 +86,22 @@ async def execute_operation(channel, request_id, code, execution_context='server
                 await AnonymizerRegistry.ensure_dictionary_loaded(channel)
                 if settings.anonymization_dictionary_enabled and anon._dict_matcher is None:
                     return failure('operation_result_policy_not_ready')
-            identifier = await channel_command_queue.add_operation(channel, request_id, 'execute_code', params)
+            context = {'execution_context': execution_context}
+            if owner.diagnostics_enabled:
+                context.update(diagnostics_enabled=True, connection=owner.connection_details['connection'])
+            identifier = await channel_command_queue.add_operation(
+                channel, request_id, 'execute_code', params,
+                context=context)
+            wait_timed_out = False
             if wait_timeout_ms:
                 try:
                     await channel_command_queue.wait_for_result(identifier, wait_timeout_ms / 1000)
                 except (asyncio.TimeoutError, KeyError):
-                    pass  # caller's wait expired; operation remains accepted
-            return await operation_status(channel, identifier)
+                    wait_timed_out = True  # The operation remains accepted.
+            snapshot = await operation_status(channel, identifier)
+            if wait_timed_out and 'diagnostics' in snapshot:
+                snapshot['diagnostics']['wait_timed_out'] = True
+            return snapshot
         finally:
             current_consumer.reset(token)
     except OperationError as exc:

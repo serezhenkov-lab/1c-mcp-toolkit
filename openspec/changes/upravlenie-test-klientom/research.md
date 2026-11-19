@@ -29,7 +29,7 @@ MCP handler proxy получает владельца канала и перед
 | FileTransport.step, write_json | [file_transport.py](../../../onec_mcp_toolkit_proxy/file_transport.py) | Последовательный файловый обмен и атомарная публикация |
 | CommandQueue / ChannelCommandQueue | [command_queue.py](../../../onec_mcp_toolkit_proxy/command_queue.py) | Существующие очереди; не заменять новой транспортной системой |
 | Форматирование и анонимизация | [server.py](../../../onec_mcp_toolkit_proxy/server.py), [anonymizer](../../../onec_mcp_toolkit_proxy/anonymizer) и ветки основной формы | Проверить все пути текстовых результатов test_* |
-| Общий контракт операций | [operation-lifecycle](../rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/specs/operation-lifecycle/spec.md) | Внешняя зависимость, не переносить задачи сюда |
+| Общий контракт операций | [operation-lifecycle](../../specs/operation-lifecycle/spec.md) | Внешняя зависимость, не переносить задачи сюда |
 | Python и BSL-проверки | [tests](../../../tests), [инструкция BSL-проверок](../../../tests/approval_modes/README.md) | Существующие средства регрессии; не доказательство UI-приёмки |
 
 ## Ограничения 1С
@@ -59,8 +59,8 @@ MCP handler proxy получает владельца канала и перед
 
 | Донор | Ревизия | Локальная копия | Лицензия в исходниках |
 | --- | --- | --- | --- |
-| [ROCTUP/1c-testpilot](https://github.com/ROCTUP/1c-testpilot/tree/46eaa7454292e3e8a8159f631190221b5ffdce72) | main, 46eaa7454292e3e8a8159f631190221b5ffdce72, ver 1.9.2 | [.local/donors/1c-testpilot](../../../.local/donors/1c-testpilot) | LICENSE — AGPL v3; pyproject.toml — AGPL-3.0-only |
-| [pZayash/answer42-mcp](https://github.com/pZayash/answer42-mcp/tree/0406669a88144834bfdf6086c7040a25cb76d24c) | beta, 0406669a88144834bfdf6086c7040a25cb76d24c, v0.5.3 | [.local/donors/answer42-mcp](../../../.local/donors/answer42-mcp) | LICENSE и pyproject.toml — MIT |
+| [ROCTUP/1c-testpilot](https://github.com/ROCTUP/1c-testpilot/tree/46eaa7454292e3e8a8159f631190221b5ffdce72) | main, 46eaa7454292e3e8a8159f631190221b5ffdce72, ver 1.9.2 | .local/donors/1c-testpilot (локальный путь `.local/donors/1c-testpilot`) | LICENSE — AGPL v3; pyproject.toml — AGPL-3.0-only |
+| [pZayash/answer42-mcp](https://github.com/pZayash/answer42-mcp/tree/0406669a88144834bfdf6086c7040a25cb76d24c) | beta, 0406669a88144834bfdf6086c7040a25cb76d24c, v0.5.3 | .local/donors/answer42-mcp (локальный путь `.local/donors/answer42-mcp`) | LICENSE и pyproject.toml — MIT |
 
 Клоны получены 12.11.2026 через git clone --depth 1 с указанными ветками. Обычный Git/Schannel в песочнице отказал из-за отсутствия credentials; повтор с локальным параметром http.sslBackend=openssl успешен, проверка TLS не отключалась. Рабочие деревья обоих клонов чистые. .local игнорируется Git проекта; исходники не включаются в поставку Toolkit. Для воспроизводимости ориентироваться на полный SHA, а не текущую вершину ветки.
 
@@ -152,11 +152,11 @@ MCP handler proxy получает владельца канала и перед
 Уточнение пользователя после проверки событий: **1.4 снова открыт**. Отключение возможности и отрицательная матрица не являются завершением исследования. Прежняя отметка о закрытии отменена; причина расхождения со справкой ещё требует установления.
 
 
-Текущий результат дополнительного исследования: [минимальный пример](evidence/open-cell-minimal/README.md) воспроизводит отказ вне редактирования при подтверждённых текущей ячейке, ссылочном значении, КнопкаОткрытия=true и современном клиентском интерфейсе Версия8_5, включая /i85. Причина не установлена; capability unverified, 1.4 открыт. Дальнейшие независимые задачи не требуют закрывать его отключением функции.
+Текущий результат дополнительного исследования: минимальный пример (локальный путь `openspec/changes/upravlenie-test-klientom/evidence/open-cell-minimal/README.md`) воспроизводит отказ вне редактирования при подтверждённых текущей ячейке, ссылочном значении, КнопкаОткрытия=true и современном клиентском интерфейсе Версия8_5, включая /i85. Причина не установлена; capability unverified, 1.4 открыт. Дальнейшие независимые задачи не требуют закрывать его отключением функции.
 
 ## Актуализация исследований и статуса — 15.11.2026
 
-Ранние разделы описывают историческое состояние 12–13.11. Их формулировки «реализации нет» и «3.5 открыт» не являются текущим статусом. Локальный драйвер создан, 3.5 закрыт честным incomplete_search без независимой идентичности; публичный маршрут и сквозная приёмка остаются открытыми. Актуальные доказательства: [tasks.md](tasks.md), [неполная приёмка](task074-acceptance.md), [события общего lifecycle](../rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/lifecycle-approval.md).
+Ранние разделы описывают историческое состояние 12–13.11. Их формулировки «реализации нет» и «3.5 открыт» не являются текущим статусом. Локальный драйвер создан, 3.5 закрыт честным incomplete_search без независимой идентичности; публичный маршрут и сквозная приёмка остаются открытыми. Актуальные доказательства: [tasks.md](tasks.md), [неполная приёмка](task074-acceptance.md), [события общего lifecycle](../archive/2026-11-19-rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/lifecycle-approval.md).
 
 Проведённые дополнительные исследования: [Тестер](tester-source-analysis.md), [Vanessa](vanessa-source-analysis.md), [TestingTool-3](testingtool-source-analysis.md), [CodexTestBridge](codex-test-bridge-source-analysis.md), [Инфостарт](infostart-source-analysis.md), [Сценарное тестирование 3.0.40.7 и Тестировщик 1.0.10.34](1c-testing-products-source-analysis.md). Закреплённые ревизии/хеши и ограничения сохранены в этих отчётах; прямого переноса чужого кода не было.
 

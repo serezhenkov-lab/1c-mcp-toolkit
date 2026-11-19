@@ -505,6 +505,9 @@ class ChannelCommandQueue:
         
         command = queue._pending.get(command_id)
         if command is not None and command.durable:
+            if command.tool == 'execute_code':
+                from .runtime_diagnostics import normalize_execution_result
+                result = normalize_execution_result(result)
             if not self.operation_store().finish(command_id, result):
                 return False
         # Outside lock: set result

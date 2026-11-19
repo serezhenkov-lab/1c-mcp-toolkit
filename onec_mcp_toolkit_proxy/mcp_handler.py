@@ -245,13 +245,24 @@ async def _execute_bound_1c_command(tool: str, params: Dict[str, Any], channel: 
         )
         logger.info(f"Command {command_id} completed successfully on channel '{channel}'")
         from .consumer_registry import check_current
+        from .runtime_diagnostics import ERROR_TRACE_FIELDS, apply_error_trace_policy, pop_error_trace, pop_execution_ms
         check_current()
+        diagnostics = {}
+        if isinstance(result, dict) and any(field in result for field in ("execution_ms", *ERROR_TRACE_FIELDS)):
+            result = dict(result)
+            execution_ms = pop_execution_ms(result)
+            trace = pop_error_trace(result)
+            if not result.get("success"):
+                diagnostics.update(trace)
+            if execution_ms is not None:
+                diagnostics["execution_ms"] = execution_ms
         if isinstance(result, dict) and "base" in result:
             source_metadata = {"base": result["base"]}
 
         # Anonymize response before formatting
         if _do_anon:
             result = anon.anonymize_response(result, tool_name=tool)
+            apply_error_trace_policy(diagnostics, anon, tool)
 
         if _do_anon and tool == "execute_query" and not requested_schema and isinstance(result, dict):
             result = dict(result)
@@ -265,12 +276,15 @@ async def _execute_bound_1c_command(tool: str, params: Dict[str, Any], channel: 
             result = dict(result)
             result.pop('schema', None)
 
+        if diagnostics:
+            result["diagnostics"] = diagnostics
+
         # Format result based on configuration (Requirement 2.1, 2.2, 5.1, 5.2, 5.3)
         return format_tool_result(result, settings.response_format)
     except asyncio.TimeoutError:
         # Validates: Requirement 6.2 - clear error message when 1C not responding
         logger.error(f"Command {command_id} timed out after {effective_timeout}s on channel '{channel}'")
-        return {
+        result = {
             "success": False,
             "error": f"Таймаут ожидания ответа от 1С на канале '{channel}' (>{effective_timeout}с). "
                      "Убедитесь, что клиент 1С подключён с тем же channel ID. / "
@@ -278,6 +292,12 @@ async def _execute_bound_1c_command(tool: str, params: Dict[str, Any], channel: 
                      "Make sure 1C client is connected with the same channel ID.",
             **source_metadata,
         }
+        if tool == 'restart_1c_session' and owner is not None and owner.diagnostics_enabled:
+            result.update(operation_id=command_id, diagnostics={
+                'stage': 'wait_for_restart', 'source': 'timeout', 'code': 'restart_outcome_unknown',
+                'connection_status_path': '/1c/status',
+            })
+        return result
     except KeyError as e:
         logger.error(f"Command {command_id} not found: {e}")
         return {

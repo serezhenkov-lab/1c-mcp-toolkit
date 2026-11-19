@@ -17,7 +17,7 @@ def update(ids, status, evidence, limitation, level='runtime_local'):
 
 update('TI-01/1', 'локально', 'lost-response.md', '60/60 сохранённых проверок на HTTP/file/embedded, файловая база: потерян ответ после UI-записи, один документ и тот же operation_id. Клиент-серверный режим не проверен.')
 update('TI-01/2 TI-06/3', 'локально', 'queue1-current.md', 'Общий lifecycle: conflict/изоляция и публичные test_* подтверждены локальными протоколами HTTP/file/embedded. Это не полная средовая матрица.')
-update('TI-01/3', 'локально', '../rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/file-recovery.md', 'Unknown после UI commit подтверждён прежним queue1-finish; новый file recovery 17/17 сохраняет unknown и один документ. Legacy/unclaimed и другие среды открыты.')
+update('TI-01/3', 'локально', '../archive/2026-11-19-rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/file-recovery.md', 'Unknown после UI commit подтверждён прежним queue1-finish; новый file recovery 17/17 сохраняет unknown и один документ. Legacy/unclaimed и другие среды открыты.')
 update('TI-01a/1 TI-01a/2', 'локально', 'lifecycle-fast.md', 'Status существующей операции без admission, квоты, прежние ключи, conflict/изоляция проверены на отдельной файловой 8.5.1.1529 и локально. Политика анонимизации не принята.')
 update('TI-02/1', 'частично', 'native-scenario-cleanup.md', 'Нативный TI-05 и очистка прошли на трёх маршрутах файловой базы, 48/48. Все действия/отказы и клиент-серверный режим этим не покрыты.')
 update('TI-03/6', 'частично', 'task063-partial.md', 'Есть прежние локальные проверки политики данных. Положительная сквозная анонимизация отложена пользователем; не объявляется принятой.', 'local_tests')

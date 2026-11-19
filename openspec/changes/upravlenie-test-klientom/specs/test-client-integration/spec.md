@@ -2,7 +2,7 @@
 
 Единая доставка и наблюдаемость test_* через существующие интерфейсы Toolkit.
 
-Внешняя зависимость: [общий контракт operation-lifecycle](../../../rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/specs/operation-lifecycle/spec.md). Его реализация остаётся в отдельном change.
+Внешняя зависимость: [общий контракт operation-lifecycle](../../../../specs/operation-lifecycle/spec.md). Его реализация остаётся в отдельном change.
 
 ## ADDED Requirements
 

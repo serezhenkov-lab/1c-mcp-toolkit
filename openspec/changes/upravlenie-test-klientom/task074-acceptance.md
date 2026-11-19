@@ -10,10 +10,10 @@
 |---|---|---|
 | Общий lifecycle и публичные test_* | [Очередь 1](queue1-current.md), [маршрутные проверки](queue1-remaining-checks.md), [embedded](embedded-lifecycle-partial.md) | Статус, conflict, TTL, изоляция, restart; не полная матрица всех сред/отказов |
 | Потеря ответа после UI-записи | [60/60](lost-response.md) на HTTP/file/embedded | Файловая база, одна операция и один документ; не повторялось в этой сверке |
-| Unknown и file recovery | [UI commit до результата](queue1-finish.md), [17/17 восстановления](../rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/file-recovery.md) | Новый протокол Windows, HTTP доступен при executor_busy; legacy/unclaimed и RDP/Linux открыты |
+| Unknown и file recovery | [UI commit до результата](queue1-finish.md), [17/17 восстановления](../archive/2026-11-19-rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/file-recovery.md) | Новый протокол Windows, HTTP доступен при executor_busy; legacy/unclaimed и RDP/Linux открыты |
 | Квоты/status/компактация | [Status без admission](lifecycle-fast.md), [уступка HTTP](lifecycle-http.md) | Локальные нагрузки; замеры не SLA и не клиент-серверная приёмка |
 | Диагностика и снимки | [Очередь 2](queue2-summary.md), [прогресс](intermediate-progress.md), [HWND](hwnd-check.md) | Есть снимки реального клиента и модального окна; пересоздание основного HWND/другие среды открыты |
-| Нативный документ и очистка | [48/48](native-scenario-cleanup.md), [сводка первичных отчётов](evidence/native-scenario-cleanup/summary.json) | HTTP/file/embedded, отдельные файловые базы 8.5.1.1529, 9→10→9, без ручного controller |
+| Нативный документ и очистка | [48/48](native-scenario-cleanup.md), сводка первичных отчётов (локальный путь `openspec/changes/upravlenie-test-klientom/evidence/native-scenario-cleanup/summary.json`) | HTTP/file/embedded, отдельные файловые базы 8.5.1.1529, 9→10→9, без ручного controller |
 | Сравнение данных / сценарии / diff / показатели | TE-строки [матрицы](task074-scenario-matrix.md) | Разделены локальные тесты, инъекции и живые прогоны; продуктовый контекст/reader и таблицы не готовы |
 
 Для нативного документа сохранены база/версия/EPF SHA, session_id и operation_id, дерево, отказ обязательности без записи, исправление, одна новая ссылка и адресная очистка. Исходные строки по выбранным полям равны после очистки; privileged=false/transaction=false. Нумерация/журналы не откатывались. Две неуспешные подготовки в этом пакете сохранены, не засчитаны в 48/48.
@@ -42,6 +42,6 @@
 
 ## Проверка этой актуализации
 
-[Машиночитаемая матрица](evidence/task074-scenario-matrix.json) хранит SHA-256 четырёх текущих спецификаций и каждого указанного протокола. [Документальная проверка](evidence/task074-document-checks.json) сверяет точный набор requirement+scenario, отсутствие пропусков/дублей, ссылки, хеши и неизменные отметки. Это проверка документов, не новое доказательство поведения Toolkit. Архивы/старые бинарники не переисполнялись.
+Машиночитаемая матрица (локальный путь `openspec/changes/upravlenie-test-klientom/evidence/task074-scenario-matrix.json`) хранит SHA-256 четырёх текущих спецификаций и каждого указанного протокола. Документальная проверка (локальный путь `openspec/changes/upravlenie-test-klientom/evidence/task074-document-checks.json`) сверяет точный набор requirement+scenario, отсутствие пропусков/дублей, ссылки, хеши и неизменные отметки. Это проверка документов, не новое доказательство поведения Toolkit. Архивы/старые бинарники не переисполнялись.
 
 [Инструкция запуска и восстановления](task074-runbook.md) актуализирована по сохранённым прогонам. Рабочая установка не обновлена; наблюдатель не подключён; незавершённые пункты не закрыты.

@@ -28,18 +28,18 @@ UI-операции вызываются через публичные test_*, I
 
 | Маршрут | Прогон UTC | Результат | Очистка |
 |---|---|---|---|
-| HTTP proxy | 20261117T040815 | [16/16](evidence/native-scenario-cleanup/http/scenario-proof.json) | [Исходные 9 строк восстановлены](evidence/native-scenario-cleanup/http/after-cleanup.json) |
-| File bridge | 20261117T040941 | [16/16](evidence/native-scenario-cleanup/file/scenario-proof.json) | [Исходные 9 строк восстановлены](evidence/native-scenario-cleanup/file/after-cleanup.json) |
-| Embedded HTTP | 20261117T041121 | [16/16](evidence/native-scenario-cleanup/embedded/scenario-proof.json) | [Исходные 9 строк восстановлены](evidence/native-scenario-cleanup/embedded/after-cleanup.json) |
+| HTTP proxy | 20261117T040815 | 16/16 (локальный путь `openspec/changes/upravlenie-test-klientom/evidence/native-scenario-cleanup/http/scenario-proof.json`) | Исходные 9 строк восстановлены (локальный путь `openspec/changes/upravlenie-test-klientom/evidence/native-scenario-cleanup/http/after-cleanup.json`) |
+| File bridge | 20261117T040941 | 16/16 (локальный путь `openspec/changes/upravlenie-test-klientom/evidence/native-scenario-cleanup/file/scenario-proof.json`) | Исходные 9 строк восстановлены (локальный путь `openspec/changes/upravlenie-test-klientom/evidence/native-scenario-cleanup/file/after-cleanup.json`) |
+| Embedded HTTP | 20261117T041121 | 16/16 (локальный путь `openspec/changes/upravlenie-test-klientom/evidence/native-scenario-cleanup/embedded/scenario-proof.json`) | Исходные 9 строк восстановлены (локальный путь `openspec/changes/upravlenie-test-klientom/evidence/native-scenario-cleanup/embedded/after-cleanup.json`) |
 
-[Общая сводка и SHA-256](evidence/native-scenario-cleanup/summary.json). В папках маршрутов сохранены state, native-tree, baseline, required-rejection, written, cleanup-target, after-cleanup, scenario-actions/terminal и завершение собственных процессов.
+Общая сводка и SHA-256 (локальный путь `openspec/changes/upravlenie-test-klientom/evidence/native-scenario-cleanup/summary.json`). В папках маршрутов сохранены state, native-tree, baseline, required-rejection, written, cleanup-target, after-cleanup, scenario-actions/terminal и завершение собственных процессов.
 
 Две неуспешные подготовки сохранены отдельно, не засчитаны в 48/48:
 
 - Копия прежнего диагностического стенда `20261116T124131` дала «Ошибка формата потока» при старте менеджера, до сценария. Точная причина не установлена. Свежие копии исходного подготовленного стенда `20261116T121346` успешно использованы на трёх маршрутах; это не объявляется исправлением первой копии.
 - Первый embedded-запуск получил operation_store_unavailable до attach/UI. В launcher добавлено ожидание готовности владельца lifecycle через status; повторены только подготовка и ещё не выполненный embedded-сценарий на новой копии. Старые успешные HTTP/file прогоны не повторялись.
 
-Все собственные процессы успешных и неуспешных запусков завершены. Изменены только тестовые Python-скрипты и документы. AST, проверка доказательств и OpenSpec выполнены отдельно; BSL LS и сборка повторно не запускались, поскольку Toolkit/EPF не изменялись. Сборка и её ограничения относятся к [предыдущему этапу](../rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/file-recovery.md); новый inline BSL очистки проверен фактическим выполнением на трёх маршрутах.
+Все собственные процессы успешных и неуспешных запусков завершены. Изменены только тестовые Python-скрипты и документы. AST, проверка доказательств и OpenSpec выполнены отдельно; BSL LS и сборка повторно не запускались, поскольку Toolkit/EPF не изменялись. Сборка и её ограничения относятся к [предыдущему этапу](../archive/2026-11-19-rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/file-recovery.md); новый inline BSL очистки проверен фактическим выполнением на трёх маршрутах.
 
 ## Однокомандный запуск и остаток
 

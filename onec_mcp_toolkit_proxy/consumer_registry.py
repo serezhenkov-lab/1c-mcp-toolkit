@@ -29,10 +29,16 @@ class Consumer:
     retired: bool = False
     last_seen_monotonic: float | None = None
     last_seen_at: datetime | None = None
+    connection_details: dict | None = None
+    connection_observed_at: float | None = None
 
     @property
     def cache_key(self):
         return (self.channel, self.generation) if self.mode == 'server_host' else self.channel
+
+    @property
+    def diagnostics_enabled(self):
+        return bool(self.connection_details and self.connection_details['enabled'])
 
 
 current_consumer: ContextVar[Consumer | None] = ContextVar('current_consumer', default=None)
@@ -62,6 +68,28 @@ class ConsumerRegistry:
         return {
             'last_seen_at': consumer.last_seen_at.isoformat(timespec='milliseconds').replace('+00:00', 'Z'),
             'last_seen_seconds_ago': round(max(0, now - consumer.last_seen_monotonic), 3),
+        }
+
+    def connection_status(self, channel, now):
+        consumer = self.consumers.get(channel)
+        activity = self.activity_status(channel, now)
+        age = activity['last_seen_seconds_ago']
+        details = None
+        if consumer is None or age is None:
+            readiness = 'unknown'
+        elif consumer.retired or age >= LEASE_SECONDS:
+            readiness = 'disconnected'
+        elif (consumer.connection_observed_at is not None
+              and now - consumer.connection_observed_at < LEASE_SECONDS):
+            readiness = 'ready'
+            if consumer.diagnostics_enabled:
+                details = consumer.connection_details['connection']
+        else:
+            readiness = 'unknown'
+        return {
+            **activity,
+            'readiness': readiness,
+            'connection': details,
         }
 
     def retire(self, consumer):
