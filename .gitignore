@@ -93,3 +93,6 @@ dist/
 # IDE
 *.sublime-project
 *.sublime-workspace
+
+# Local archives from project cleanups
+/.cleanup-archive/
