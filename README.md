@@ -3,7 +3,7 @@
 Форк [ROCTUP/1c-mcp-toolkit v1.10.0](https://github.com/ROCTUP/1c-mcp-toolkit).
 Во внешней обработке версии показаны отдельными ссылками «Toolkit» и «Fork».
 
-**[Скачать EPF форка 26.11.19.1137](./build/http-mvp/MCPToolkit__26_11_19_1137.epf?raw=true)**
+**[Скачать EPF форка 26.11.19.1647](./build/http-mvp/MCPToolkit__26_11_19_1647.epf?raw=true)**
 
 ## Какой режим выбрать
 
