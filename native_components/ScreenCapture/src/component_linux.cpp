@@ -9,8 +9,10 @@
 
 namespace screen_capture {
 bool ScreenCaptureComponent::CaptureMainWindow(int scale, bool showGrid, std::string& outB64,
-    int regionX, int regionY, int regionW, int regionH, const std::string& highlightRects) {
+    int regionX, int regionY, int regionW, int regionH, const std::string& highlightRects, uint32_t targetPid, const std::string& created) {
     outB64.clear();
+    if (targetPid) return true; // Cross-process target is Windows-only; never fall back to the host.
+    (void)created;
     try {
         // Match the BSL range, including calls made directly through the Native API.
         if (scale < 10 || scale > 200) { outB64 = "ERROR:x11:invalid_scale"; return true; }

@@ -58,6 +58,7 @@ from .rest_api import (
     get_screenshot_handler,
     restart_1c_session_handler,
     close_1c_session_handler,
+    set_approval_mode_handler,
 )
 from .anonymizer.registry import AnonymizerRegistry
 from .consumer_registry import consumer_registry, ConsumerChanged
@@ -203,10 +204,12 @@ async def lifespan(app: Starlette):
     async with mcp_server.session_manager.run():
         async with file_runtime(configured_channels(), os.getenv("FILE_BRIDGE_ROOT")) as runtime:
             app.state.file_bridges = runtime.bridges
+            app.state.file_recovery = runtime.recovery
             try:
                 yield
             finally:
                 app.state.file_bridges = {}
+                app.state.file_recovery = {}
 
     # Shutdown
     logger.info("1C MCP Toolkit Proxy shutting down")
@@ -340,7 +343,7 @@ async def receive_result(request: Request) -> JSONResponse:
             }
         )
     except ValidationError as e:
-        errors = e.errors()
+        errors = e.errors(include_context=False)
         error_messages = []
         for error in errors:
             loc = " -> ".join(str(l) for l in error.get("loc", []))
@@ -361,6 +364,8 @@ async def receive_result(request: Request) -> JSONResponse:
     
     logger.info(f"Received result from 1C on channel '{channel}': id={result.id}, success={result.success}")
     command = channel_command_queue.get_command(result.id)
+    if command is not None and command.durable and channel_command_queue._command_index.get(result.id) != channel:
+        return JSONResponse({'error': 'Operation not found in this channel'}, status_code=404)
     if command is not None and command.consumer is not None and command.consumer.mode == 'server_host':
         try:
             if host_of(request) is not command.consumer:
@@ -370,6 +375,10 @@ async def receive_result(request: Request) -> JSONResponse:
     elif request.headers.get('X-MCP-Host-Lease'):
         return JSONResponse({'error': 'Command no longer belongs to this host'}, status_code=409)
     
+    if result.lifecycle_event is not None:
+        accepted = await channel_command_queue.observe_operation(channel, result.id, result.lifecycle_event, result.lifecycle_seq, result.progress)
+        return JSONResponse({'success': accepted}, status_code=200 if accepted else 409)
+
     if result.error:
         logger.warning(f"Command {result.id} failed: {result.error}")
     
@@ -387,6 +396,8 @@ async def receive_result(request: Request) -> JSONResponse:
 
     # Pass through whitelisted optional metadata fields (do not forward arbitrary extras)
     optional_meta_fields = (
+        "lifecycle_outcome",
+        "rejection_reason",
         "truncated",
         "limit",
         "returned",
@@ -407,6 +418,10 @@ async def receive_result(request: Request) -> JSONResponse:
         "overlay_failures",
         "capture_complete",
         "foreground_window",
+        "capture_target",
+        "target",
+        "session_id",
+        "image_anonymized",
     )
     for key in optional_meta_fields:
         value = getattr(result, key, None)
@@ -480,6 +495,7 @@ async def health_check(request: Request) -> JSONResponse:
         # Aggregated channel stats (do not expose channel IDs)
         "pending_channels_count": pending_channels_count,
         "active_channels_count": channel_command_queue.get_active_channels_count(),
+        "file_recovery": list(getattr(request.app.state, "file_recovery", {}).values()),
         "active_sessions_count": active_sessions_count,
         "mcp_endpoint": "/mcp"
     }
@@ -548,7 +564,10 @@ async def mcp_debug(request: Request) -> JSONResponse:
 
 
 # Starlette application with routes
+from .test_client_api import test_client_routes
+
 routes = [
+    *test_client_routes,
     Route("/mcp", McpUnifiedApp(), methods=["GET", "POST", "DELETE"]),
     Route("/mcp/message", LegacySseMessageApp(), methods=["POST"]),
     Route("/1c/host/register", register_host, methods=["POST"]),
@@ -576,6 +595,7 @@ routes = [
     Route("/api/get_screenshot", get_screenshot_handler, methods=["POST"]),
     Route("/api/restart_1c_session", restart_1c_session_handler, methods=["POST"]),
     Route("/api/close_1c_session", close_1c_session_handler, methods=["POST"]),
+    Route("/api/set_approval_mode", set_approval_mode_handler, methods=["POST"]),
 ]
 
 app = Starlette(

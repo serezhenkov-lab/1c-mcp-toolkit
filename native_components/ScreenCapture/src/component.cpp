@@ -65,11 +65,11 @@ static std::vector<WCHAR_T> WideToNative(const std::wstring& source) {
 // ============================================================================
 
 const wchar_t* ScreenCaptureComponent::method_names_en_[] = {
-    L"CaptureWindow",
+    L"CaptureWindow", L"CaptureProcessWindow",
 };
 
 const wchar_t* ScreenCaptureComponent::method_names_ru_[] = {
-    L"ЗахватитьОкно",
+    L"ЗахватитьОкно", L"ЗахватитьОкноПроцесса",
 };
 
 // ============================================================================
@@ -147,6 +147,7 @@ const WCHAR_T* ScreenCaptureComponent::GetMethodName(const long lMethodNum,
 long ScreenCaptureComponent::GetNParams(const long lMethodNum) {
     switch (lMethodNum) {
         case eMethodCaptureWindow: return 7;
+        case eMethodCaptureProcessWindow: return 9;
         default:                   return 0;
     }
 }
@@ -175,7 +176,7 @@ bool ScreenCaptureComponent::GetParamDefValue(const long lMethodNum, const long 
 }
 
 bool ScreenCaptureComponent::HasRetVal(const long lMethodNum) {
-    return lMethodNum == eMethodCaptureWindow;
+    return lMethodNum == eMethodCaptureWindow || lMethodNum == eMethodCaptureProcessWindow;
 }
 
 bool ScreenCaptureComponent::CallAsFunc(const long lMethodNum,
@@ -185,6 +186,19 @@ bool ScreenCaptureComponent::CallAsFunc(const long lMethodNum,
     if (!pvarRetValue) return false;
 
     switch (lMethodNum) {
+        case eMethodCaptureProcessWindow: {
+            if (lSizeArray != 9) return false;
+            int pid = GetIntFromVariant(&paParams[0], 0);
+            if (pid <= 0) return SetStringToVariant(pvarRetValue, "");
+            std::string result;
+            bool ok = CaptureMainWindow(GetIntFromVariant(&paParams[2], 100),
+                GetBoolFromVariant(&paParams[3]), result,
+                GetIntFromVariant(&paParams[4], -1), GetIntFromVariant(&paParams[5], -1),
+                GetIntFromVariant(&paParams[6], -1), GetIntFromVariant(&paParams[7], -1),
+                GetStringFromVariant(&paParams[8]), static_cast<uint32_t>(pid), GetStringFromVariant(&paParams[1]));
+            if (!ok) return false;
+            return SetStringToVariant(pvarRetValue, result);
+        }
         case eMethodCaptureWindow: {
             int  scale    = (lSizeArray >= 1) ? GetIntFromVariant(&paParams[0], 100) : 100;
             bool showGrid = (lSizeArray >= 2) ? GetBoolFromVariant(&paParams[1])     : false;
@@ -331,8 +345,29 @@ static bool BitmapLooksBlank(HDC dc, int w, int h) {
 
 // PW_RENDERFULLCONTENT — no PW_CLIENTONLY here: the layer's frame is part of what a human sees, and
 // GetWindowRect includes it.
+// Screen pixels are usable for an external target only when no foreign window
+// overlaps this layer above it in Z-order. Recheck after BitBlt as well.
+static bool ScreenSourceOwned(HWND target, const overlay::OverlayPaint& job, DWORD pid) {
+    DWORD actual = 0; GetWindowThreadProcessId(target, &actual);
+    RECT region = {job.srcLeft, job.srcTop, job.srcLeft + job.w, job.srcTop + job.h};
+    RECT actualRect = {};
+    if (actual != pid || !IsWindowVisible(target) || !GetWindowRect(target, &actualRect)
+        || !EqualRect(&region, &actualRect)) return false;
+    unsigned seen = 0;
+    for (HWND above = GetWindow(target, GW_HWNDPREV); above; above = GetWindow(above, GW_HWNDPREV)) {
+        if (++seen > 4096) return false;
+        if (!IsWindowVisible(above) || IsIconic(above)) continue;
+        DWORD owner = 0; GetWindowThreadProcessId(above, &owner);
+        if (owner == pid) continue;
+        RECT rectangle = {}, overlap = {};
+        if (!GetWindowRect(above, &rectangle)) return false;
+        if (IntersectRect(&overlap, &region, &rectangle)) return false;
+    }
+    return true;
+}
+
 static OverlayPaintResult PaintOverlays(HDC dst, HDC screen, const overlay::CaptureFrame& frame,
-                                        const std::vector<overlay::OverlayPaint>& jobs) {
+                                        const std::vector<overlay::OverlayPaint>& jobs, bool strictSource = false) {
     OverlayPaintResult result;
     result.painted.reserve(jobs.size());
 
@@ -366,8 +401,11 @@ static OverlayPaintResult PaintOverlays(HDC dst, HDC screen, const overlay::Capt
             drawn = PrintWindow(hwnd, tmp, 0x2) != FALSE;  // PW_RENDERFULLCONTENT
             if (drawn && BitmapLooksBlank(tmp, job.w, job.h)) drawn = false;
         }
-        if (!drawn && frame.screenSourceAllowed) {
+        if (!drawn && frame.screenSourceAllowed
+            && (!strictSource || ScreenSourceOwned(hwnd, job, frame.targetPid))) {
+            HWND foregroundBefore = GetForegroundWindow();
             drawn = BitBlt(tmp, 0, 0, job.w, job.h, screen, job.srcLeft, job.srcTop, SRCCOPY) != FALSE;
+            if (drawn && strictSource) drawn = foregroundBefore == GetForegroundWindow() && ScreenSourceOwned(hwnd, job, frame.targetPid);
             if (drawn) used = overlay::OverlayBackend::Screen;
         }
 
@@ -524,21 +562,86 @@ static std::string BuildMetadataJson(int coordLeft, int coordTop, int w, int h,
     return json;
 }
 
+
+struct ProcessProof {
+    HANDLE handle = nullptr;
+    ~ProcessProof() { if (handle) CloseHandle(handle); }
+    bool Alive() const { DWORD code = 0; return handle && GetExitCodeProcess(handle, &code) && code == STILL_ACTIVE; }
+    bool Check(DWORD pid, const std::string& dmtf) {
+        if (dmtf.size() != 25 || dmtf[14] != '.' || (dmtf[21] != '+' && dmtf[21] != '-')) return false;
+        for (size_t i = 0; i < dmtf.size(); ++i)
+            if (i != 14 && i != 21 && (dmtf[i] < '0' || dmtf[i] > '9')) return false;
+        DWORD ownSession = 0, targetSession = 0;
+        if (!ProcessIdToSessionId(GetCurrentProcessId(), &ownSession) || !ProcessIdToSessionId(pid, &targetSession)
+            || ownSession != targetSession) return false;
+        SYSTEMTIME time = {};
+        time.wYear = static_cast<WORD>(std::stoi(dmtf.substr(0,4)));
+        time.wMonth = static_cast<WORD>(std::stoi(dmtf.substr(4,2)));
+        time.wDay = static_cast<WORD>(std::stoi(dmtf.substr(6,2)));
+        time.wHour = static_cast<WORD>(std::stoi(dmtf.substr(8,2)));
+        time.wMinute = static_cast<WORD>(std::stoi(dmtf.substr(10,2)));
+        time.wSecond = static_cast<WORD>(std::stoi(dmtf.substr(12,2)));
+        FILETIME local = {};
+        if (!SystemTimeToFileTime(&time, &local)) return false;
+        ULARGE_INTEGER expected = {}; expected.LowPart = local.dwLowDateTime; expected.HighPart = local.dwHighDateTime;
+        long long offset = std::stoll(dmtf.substr(22,3)) * 60LL * 10000000LL;
+        expected.QuadPart += std::stoll(dmtf.substr(15,6)) * 10LL;
+        if (dmtf[21] == '+') expected.QuadPart -= offset; else expected.QuadPart += offset;
+        handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+        FILETIME actual = {}, exit = {}, kernel = {}, user = {};
+        if (!handle || !GetProcessTimes(handle, &actual, &exit, &kernel, &user)) return false;
+        ULARGE_INTEGER observed = {}; observed.LowPart = actual.dwLowDateTime; observed.HighPart = actual.dwHighDateTime;
+        return expected.QuadPart / 10 == observed.QuadPart / 10 && Alive();
+    }
+};
+static std::wstring DesktopName(HDESK desktop) {
+    wchar_t name[256] = {}; DWORD needed = 0;
+    if (!desktop || !GetUserObjectInformationW(desktop, UOI_NAME, name, sizeof(name), &needed)) return {};
+    return name;
+}
+static bool SameDesktop(HWND window) {
+    DWORD tid = GetWindowThreadProcessId(window, nullptr);
+    std::wstring ours = DesktopName(GetThreadDesktop(GetCurrentThreadId()));
+    std::wstring theirs = DesktopName(GetThreadDesktop(tid));
+    HDESK input = OpenInputDesktop(0, FALSE, DESKTOP_READOBJECTS);
+    std::wstring current = DesktopName(input);
+    if (input) CloseDesktop(input);
+    return !ours.empty() && ours == theirs && ours == current;
+}
+struct ExactWindowData { DWORD pid; HWND window; unsigned count; };
+static BOOL CALLBACK EnumExactWindow(HWND window, LPARAM param) {
+    auto& data = *reinterpret_cast<ExactWindowData*>(param);
+    if (IsOurWindow(window, data.pid) && GetWindow(window, GW_OWNER) == nullptr) {
+        data.window = window; ++data.count;
+    }
+    return TRUE;
+}
+
 bool ScreenCaptureComponent::CaptureMainWindow(int scale, bool showGrid, std::string& outB64,
                                                 int regionX, int regionY,
                                                 int regionW, int regionH,
-                                                const std::string& highlightRects) {
+                                                const std::string& highlightRects, uint32_t targetPid, const std::string& created) {
     // Invariant: always clear first
     outB64.clear();
 
-    DWORD pid = GetCurrentProcessId();
+    DWORD pid = targetPid ? targetPid : GetCurrentProcessId();
     HWND hwnd = nullptr;
+    ProcessProof proof;
+    if (targetPid) {
+        if (!proof.Check(pid, created)) { outB64 = "ERROR:target:process_identity_unavailable"; return true; }
+        ExactWindowData exact {pid, nullptr, 0};
+        EnumWindows(EnumExactWindow, reinterpret_cast<LPARAM>(&exact));
+        if (exact.count != 1) { outB64 = "ERROR:target:ambiguous_window"; return true; }
+        if (!SameDesktop(exact.window)) { outB64 = "ERROR:target:desktop_unavailable"; return true; }
+        if (IsIconic(exact.window) || IsHungAppWindow(exact.window)) { outB64 = "ERROR:target:window_unavailable"; return true; }
+        hwnd = exact.window;
+    }
 
     // Primary: the largest visible unowned top-level window — the main frame. Deterministic on
     // purpose: the agent gets the same coordinate frame between calls, which is what makes region
     // and highlight_rects reusable across a sequence of screenshots. This is the same notion of
     // "main window" the UI automation side publishes as isMain.
-    {
+    if (!targetPid) {
         FindMainData fd { pid, nullptr, 0 };
         EnumWindows(EnumMainProc, reinterpret_cast<LPARAM>(&fd));
         hwnd = fd.best;
@@ -546,7 +649,7 @@ bool ScreenCaptureComponent::CaptureMainWindow(int scale, bool showGrid, std::st
 
     // Fallback: foreground window → root owner → PID check. Only reached when the process has no
     // unowned visible window at all.
-    if (!hwnd) {
+    if (!hwnd && !targetPid) {
         HWND fg = GetForegroundWindow();
         if (fg) {
             HWND root = GetAncestor(fg, GA_ROOTOWNER);
@@ -655,8 +758,8 @@ bool ScreenCaptureComponent::CaptureMainWindow(int scale, bool showGrid, std::st
         frame.screenSourceAllowed = true;
 
         std::vector<overlay::OverlayPaint> jobs = overlay::SelectOverlays(candidates, frame);
-        overlaysPainted = PaintOverlays(hdcSrc, hScreenDC, frame, jobs);
-        if (!overlaysPainted.ok) {
+        overlaysPainted = PaintOverlays(hdcSrc, hScreenDC, frame, jobs, targetPid != 0);
+        if (!overlaysPainted.ok || (targetPid && !overlaysPainted.failures.empty())) {
             SelectObject(hdcSrc, oldSrc);
             DeleteObject(hbmpSrc);
             DeleteDC(hdcSrc);
@@ -1018,6 +1121,22 @@ bool ScreenCaptureComponent::CaptureMainWindow(int scale, bool showGrid, std::st
 
     std::string meta = BuildMetadataJson(coordLeft, coordTop, w, h,
                                          showGrid, gridXStr, gridYStr, reported, foreground);
+    if (targetPid) {
+        DWORD actualPid = 0;
+        GetWindowThreadProcessId(hwnd, &actualPid);
+        if (actualPid != pid || !IsOurWindow(hwnd, pid) || !SameDesktop(hwnd) || !proof.Alive()) { outB64 = "ERROR:target:identity_changed"; return true; }
+        HWND modal = GetLastActivePopup(hwnd);
+        if (!IsWindowEnabled(hwnd) && modal && modal != hwnd && IsWindowVisible(modal)) {
+            bool included = false;
+            for (const auto& layer : reported.painted)
+                if (layer.hwnd == reinterpret_cast<unsigned long long>(modal)) included = true;
+            if (!included) { outB64 = "ERROR:target:modal_not_in_frame"; return true; }
+        }
+        meta.pop_back();
+        meta += ",\"capture_target\":{\"process_id\":" + std::to_string(pid)
+            + ",\"created\":\"" + created + "\",\"hwnd\":\"" + std::to_string(reinterpret_cast<uintptr_t>(hwnd))
+            + "\",\"desktop_verified\":true,\"unique_main_window\":true,\"screen_sources_verified\":true}}";
+    }
     std::string b64 = Base64Encode(rawPng);
     outB64 = "V2|" + std::to_string(meta.size()) + "|" + meta + "|" + b64;
     return true;

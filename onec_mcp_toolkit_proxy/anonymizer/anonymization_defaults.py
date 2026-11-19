@@ -15,6 +15,8 @@ DEFAULT_ANONYMIZATION_TOOLS = (
     "get_event_log",
     "find_references_to_object",
     "get_access_rights",
+    "test_session", "test_open", "test_inspect", "test_input",
+    "test_action", "test_table", "test_expect",
 )
 
 

@@ -95,7 +95,7 @@ class ConsumerRegistry:
             # heartbeat interval. Silence during a live command is not vacancy.
             busy = queue is not None and any(
                 command.consumer is old and not command.result_event.is_set()
-                and command.deadline is not None and command.deadline > now
+                and (command.durable or command.deadline is not None and command.deadline > now)
                 for command in queue._pending.values()
             )
             if now - old.seen < LEASE_SECONDS or busy:

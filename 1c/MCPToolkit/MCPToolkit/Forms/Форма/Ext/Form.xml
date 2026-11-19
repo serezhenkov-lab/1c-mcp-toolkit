@@ -600,7 +600,7 @@
 													<Title>
 														<v8:item>
 															<v8:lang>ru</v8:lang>
-															<v8:content>Опасные операции</v8:content>
+															<v8:content>Опасные операции (Fork)</v8:content>
 														</v8:item>
 													</Title>
 													<ClearButton>false</ClearButton>
@@ -840,6 +840,93 @@
 														</UsualGroup>
 													</ChildItems>
 												</UsualGroup>
+												<UsualGroup name="ГруппаПрофильТестирования" id="255">
+													<Title>
+														<v8:item>
+															<v8:lang>ru</v8:lang>
+															<v8:content>Управление тест-клиентом (Fork)</v8:content>
+														</v8:item>
+													</Title>
+													<Group>Vertical</Group>
+													<Representation>None</Representation>
+													<ExtendedTooltip name="ГруппаПрофильТестированияРасширеннаяПодсказка" id="256"/>
+													<ChildItems>
+
+														<InputField name="ТестПрофильПользователь" id="263">
+															<DataPath>ТестПрофильПользователь</DataPath>
+															<Title>
+																<v8:item>
+																	<v8:lang>ru</v8:lang>
+																	<v8:content>Пользователь</v8:content>
+																</v8:item>
+															</Title>
+															<ContextMenu name="ТестПрофильПользовательКонтекстноеМеню" id="264"/>
+															<ExtendedTooltip name="ТестПрофильПользовательРасширеннаяПодсказка" id="265"/>
+															<Events>
+																<Event name="OnChange">НастройкаТестКлиентаПриИзменении</Event>
+															</Events>
+														</InputField>
+
+														<InputField name="ТестПрофильПароль" id="272">
+															<DataPath>ТестПрофильПароль</DataPath>
+															<Title>
+																<v8:item>
+																	<v8:lang>ru</v8:lang>
+																	<v8:content>Пароль</v8:content>
+																</v8:item>
+															</Title>
+															<PasswordMode>true</PasswordMode>
+															<ContextMenu name="ТестПрофильПарольКонтекстноеМеню" id="273"/>
+															<ExtendedTooltip name="ТестПрофильПарольРасширеннаяПодсказка" id="274"/>
+															<Events>
+																<Event name="OnChange">ПарольТестКлиентаПриИзменении</Event>
+															</Events>
+														</InputField>
+
+														<UsualGroup name="ДопНастройкиТестКлиента" id="280">
+															<Title>
+																<v8:item>
+																	<v8:lang>ru</v8:lang>
+																	<v8:content>Дополнительно</v8:content>
+																</v8:item>
+															</Title>
+															<Group>Vertical</Group>
+															<Behavior>Collapsible</Behavior>
+															<Collapsed>true</Collapsed>
+															<ControlRepresentation>Picture</ControlRepresentation>
+															<Representation>None</Representation>
+															<ExtendedTooltip name="ДопНастройкиТестКлиентаПодсказка" id="281"/>
+															<ChildItems>
+																<InputField name="ТестПрофильПорт" id="266">
+																	<DataPath>ТестПрофильПорт</DataPath>
+																	<Title>
+																		<v8:item>
+																			<v8:lang>ru</v8:lang>
+																			<v8:content>Локальный порт</v8:content>
+																		</v8:item>
+																	</Title>
+																	<ContextMenu name="ТестПрофильПортКонтекстноеМеню" id="267"/>
+																	<ExtendedTooltip name="ТестПрофильПортРасширеннаяПодсказка" id="268"/>
+																	<Events>
+																		<Event name="OnChange">НастройкаТестКлиентаПриИзменении</Event>
+																	</Events>
+																</InputField>
+																<InputField name="ТестПрофильСтатус" id="277">
+																	<DataPath>ТестПрофильСтатус</DataPath>
+																	<ReadOnly>true</ReadOnly>
+																	<Title>
+																		<v8:item>
+																			<v8:lang>ru</v8:lang>
+																			<v8:content>Состояние профиля</v8:content>
+																		</v8:item>
+																	</Title>
+																	<ContextMenu name="ТестПрофильСтатусКонтекстноеМеню" id="278"/>
+																	<ExtendedTooltip name="ТестПрофильСтатусРасширеннаяПодсказка" id="279"/>
+																</InputField>
+															</ChildItems>
+														</UsualGroup>
+													</ChildItems>
+												</UsualGroup>
 												<UsualGroup name="ГруппаУправлениеПодключением" id="5">
 													<Group>AlwaysHorizontal</Group>
 													<Representation>None</Representation>
@@ -934,11 +1021,32 @@
 													<CommandName>Form.Command.ОчиститьЖурнал</CommandName>
 													<ExtendedTooltip name="КнопкаОчиститьЖурналРасширеннаяПодсказка" id="31"/>
 												</Button>
+												<LabelDecoration name="НадписьНашаСборка" id="282">
+													<TextColor>web:Blue</TextColor>
+													<Title>
+														<v8:item>
+															<v8:lang>ru</v8:lang>
+															<v8:content>Fork</v8:content>
+														</v8:item>
+													</Title>
+													<ToolTip>
+														<v8:item>
+															<v8:lang>ru</v8:lang>
+															<v8:content>https://github.com/serezhenkov-lab/1c-mcp-toolkit</v8:content>
+														</v8:item>
+													</ToolTip>
+													<Hyperlink>true</Hyperlink>
+													<Events>
+														<Event name="Click">НадписьВерсияНажатие</Event>
+													</Events>
+													<ContextMenu name="НадписьНашаСборкаКонтекстноеМеню" id="283"/>
+													<ExtendedTooltip name="НадписьНашаСборкаРасширеннаяПодсказка" id="284"/>
+												</LabelDecoration>
 												<LabelDecoration name="НадписьВерсия" id="188">
 													<Title>
 														<v8:item>
 															<v8:lang>ru</v8:lang>
-															<v8:content>v1.10.0</v8:content>
+															<v8:content>Toolkit</v8:content>
 														</v8:item>
 													</Title>
 													<ToolTip>
@@ -1311,6 +1419,9 @@
 		</Pages>
 	</ChildItems>
 	<Attributes>
+		<Attribute name="ТестПрофильID" id="255">
+			<Type><v8:Type>xs:string</v8:Type><v8:StringQualifiers><v8:Length>64</v8:Length><v8:AllowedLength>Variable</v8:AllowedLength></v8:StringQualifiers></Type>
+		</Attribute>
 		<Attribute name="ПараллельноеВыполнение" id="236"><Type><v8:Type>xs:boolean</v8:Type></Type></Attribute>
 		<Attribute name="ФайловаяБазаДляПараллельности" id="237"><Type><v8:Type>xs:boolean</v8:Type></Type></Attribute>
 		<Attribute name="СтатусПараллельности" id="238"><Type><v8:Type>xs:string</v8:Type><v8:StringQualifiers><v8:Length>0</v8:Length><v8:AllowedLength>Variable</v8:AllowedLength></v8:StringQualifiers></Type></Attribute>
@@ -1685,6 +1796,69 @@
 				</v8:StringQualifiers>
 			</Type>
 		</Attribute>
+
+		<Attribute name="ТестПрофильПользователь" id="256">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Тест профиль пользователь</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>128</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="ТестПрофильПорт" id="257">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Тест профиль порт</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:decimal</v8:Type>
+				<v8:NumberQualifiers>
+					<v8:Digits>5</v8:Digits>
+					<v8:FractionDigits>0</v8:FractionDigits>
+					<v8:AllowedSign>Any</v8:AllowedSign>
+				</v8:NumberQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="ТестПрофильПароль" id="258">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Тест профиль пароль</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>256</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+
+		<Attribute name="ТестПрофильСтатус" id="260">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Тест профиль статус</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>256</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
 	</Attributes>
 	<Commands>
 		<Command name="Подключиться" id="1">
@@ -1771,6 +1945,7 @@
 			</Title>
 			<Action>УправлениеСервером</Action>
 		</Command>
+
 </Commands>
 	<Events>
 		<Event name="ПриСозданииНаСервере">ПриСозданииНаСервере</Event>

@@ -21,7 +21,9 @@ hook = '\tПодключитьОбработчикОжидания("ТестыР
 text = (text[:opening.end() - len('КонецПроцедуры')] + hook
         + text[opening.end() - len('КонецПроцедуры'):])
 text += ('\n&НаКлиенте\nПроцедура ТестыРежимовПослеОткрытия()\n'
-         f'\tВыполнитьТестыРежимов("{report}");\n'
+         '\tПопытка\n'
+         f'\t\tВыполнитьТестыРежимов("{report}");\n'
+         '\tИсключение\n\t\tСообщить("APPROVAL_TEST_REPORT_FAILED: " + ОписаниеОшибки());\n\tКонецПопытки;\n'
          '\tЗавершитьРаботуСистемы(Ложь);\nКонецПроцедуры\n')
 text += '\n' + Path(__file__).with_name('form_tests.bsl').read_text(encoding='utf-8')
 module.write_text(text, encoding='utf-8-sig', newline='\r\n')

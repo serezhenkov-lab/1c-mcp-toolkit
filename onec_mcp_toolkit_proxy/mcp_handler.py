@@ -17,7 +17,6 @@ import asyncio
 import anyio
 import json
 import logging
-import unicodedata
 from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
 from mcp.server.fastmcp import FastMCP, Context
@@ -45,6 +44,7 @@ from .tools import (
     HighlightRectItem,
     HighlightRectsParam,
     RegionParams,
+    SetApprovalModeParams,
 )
 
 logger = logging.getLogger(__name__)
@@ -56,9 +56,6 @@ if settings.response_format == "toon" and not is_toon_available():
         "TOON format requested but toon-format library not installed. "
         "Using JSON format instead."
     )
-
-
-_ZERO_WIDTH_CHARS = {"\u200b", "\u200c", "\u200d", "\ufeff"}
 
 
 def _strip_internal_execute_query_schema_fields(result: Dict[str, Any]) -> Dict[str, Any]:
@@ -88,194 +85,6 @@ def _strip_internal_execute_query_schema_fields(result: Dict[str, Any]) -> Dict[
     return cleaned
 
 
-def _normalize_for_scan(text: str) -> str:
-    """
-    Normalize input for keyword scanning.
-
-    - NFKC normalization to reduce Unicode representation variance
-    - remove zero-width characters often used for obfuscation
-    """
-    normalized = unicodedata.normalize("NFKC", text)
-    return "".join(ch for ch in normalized if ch not in _ZERO_WIDTH_CHARS)
-
-
-def _is_ident_start(ch: str) -> bool:
-    """Return True if character can start a 1C identifier."""
-    return ch == "_" or ch.isalpha()
-
-
-def _is_ident_part(ch: str) -> bool:
-    """Return True if character can be a part of a 1C identifier."""
-    return ch == "_" or ch.isalnum()
-
-
-def _tokenize_1c_code(code: str) -> List[tuple]:
-    """
-    Tokenize a minimal subset of 1C code for safe keyword detection.
-
-    The tokenizer intentionally ignores comments and string literals to avoid
-    false positives from plain text.
-    """
-    tokens: List[tuple] = []
-    i = 0
-    n = len(code)
-
-    while i < n:
-        ch = code[i]
-
-        if ch.isspace():
-            i += 1
-            continue
-
-        if ch == "/" and i + 1 < n:
-            nxt = code[i + 1]
-            # // line comment
-            if nxt == "/":
-                i += 2
-                while i < n and code[i] not in ("\n", "\r"):
-                    i += 1
-                continue
-            # /* block comment */
-            if nxt == "*":
-                i += 2
-                while i + 1 < n and not (code[i] == "*" and code[i + 1] == "/"):
-                    i += 1
-                i = i + 2 if i + 1 < n else n
-                continue
-
-        # 1C string literal: "text", escaped quote is doubled ""
-        if ch == '"':
-            i += 1
-            while i < n:
-                if code[i] == '"':
-                    if i + 1 < n and code[i + 1] == '"':
-                        i += 2
-                        continue
-                    i += 1
-                    break
-                i += 1
-            continue
-
-        # Keep single-quoted text out of analysis too (can appear in embedded text)
-        if ch == "'":
-            i += 1
-            while i < n:
-                if code[i] == "'":
-                    if i + 1 < n and code[i + 1] == "'":
-                        i += 2
-                        continue
-                    i += 1
-                    break
-                i += 1
-            continue
-
-        if _is_ident_start(ch):
-            start = i
-            i += 1
-            while i < n and _is_ident_part(code[i]):
-                i += 1
-            tokens.append(("IDENT", code[start:i]))
-            continue
-
-        if ch == ".":
-            tokens.append(("DOT", ch))
-            i += 1
-            continue
-        if ch == "(":
-            tokens.append(("LPAREN", ch))
-            i += 1
-            continue
-        if ch == ")":
-            tokens.append(("RPAREN", ch))
-            i += 1
-            continue
-
-        tokens.append(("SYMBOL", ch))
-        i += 1
-
-    return tokens
-
-
-def _collect_called_identifiers(code: str) -> set:
-    """
-    Return canonical names of identifiers used as calls in code.
-
-    We treat IDENT followed by LPAREN as a call context.
-    """
-    tokens = _tokenize_1c_code(code)
-    called: set = set()
-    for idx, (kind, value) in enumerate(tokens):
-        if kind != "IDENT":
-            continue
-        if idx + 1 < len(tokens) and tokens[idx + 1][0] == "LPAREN":
-            called.add(value.casefold())
-    return called
-
-
-def _collect_nondotted_identifiers(code: str) -> set:
-    """
-    Return canonical names of identifiers that appear NOT preceded by a dot.
-
-    Used to detect eval operators (Выполнить/Вычислить) invoked as language
-    primitives (`Выполнить(...)`, `Выполнить Код`) while allowing object methods
-    (`Запрос.Выполнить()`), which are always preceded by a DOT token.
-    """
-    tokens = _tokenize_1c_code(code)
-    nondotted: set = set()
-    for idx, (kind, value) in enumerate(tokens):
-        if kind != "IDENT":
-            continue
-        if idx > 0 and tokens[idx - 1][0] == "DOT":
-            continue
-        nondotted.add(value.casefold())
-    return nondotted
-
-
-# Mandatory critical sinks — always enforced, independent of settings.dangerous_keywords.
-# These are NOT configurable via the DANGEROUS_KEYWORDS env var so an operator override
-# of the denylist cannot silently disable them (mirrored in Module.bsl).
-# EVAL_KEYWORDS are matched only when used NOT as an object method (not preceded by a dot),
-# which blocks the string-built `Выполнить("...")` bypass while keeping `Запрос.Выполнить()`.
-EVAL_KEYWORDS = ["Выполнить", "Execute", "Вычислить", "Eval"]
-# OS command primitives — matched as calls (IDENT + LPAREN), always enforced.
-MANDATORY_CALL_KEYWORDS = ["ЗапуститьПриложение", "RunApp", "КомандаСистемы", "System"]
-
-
-def find_dangerous_keywords(code: str, dangerous_keywords: list) -> list:
-    """
-    Find dangerous keywords in the given code.
-    
-    Args:
-        code: The code to check
-        dangerous_keywords: List of dangerous keywords to search for
-        
-    Returns:
-        List of found dangerous keywords (case-preserved from the keyword list)
-    """
-    normalized_code = _normalize_for_scan(code)
-    called_identifiers = _collect_called_identifiers(normalized_code)
-    nondotted_identifiers = _collect_nondotted_identifiers(normalized_code)
-
-    found: list = []
-    seen: set = set()
-
-    def _match(keywords: list, identifier_set: set) -> None:
-        for keyword in keywords:
-            canonical_keyword = _normalize_for_scan(keyword).casefold()
-            if not canonical_keyword or canonical_keyword in seen:
-                continue
-            if canonical_keyword in identifier_set:
-                found.append(keyword)
-                seen.add(canonical_keyword)
-
-    # Configurable denylist + mandatory OS commands: matched as calls (IDENT + LPAREN).
-    _match(dangerous_keywords, called_identifiers)
-    _match(MANDATORY_CALL_KEYWORDS, called_identifiers)
-    # Eval primitives: matched only when NOT used as an object method (not after a dot).
-    _match(EVAL_KEYWORDS, nondotted_identifiers)
-
-    return found
-
 # Create the MCP server instance
 mcp = FastMCP(
     name="1C MCP Toolkit Proxy",
@@ -284,7 +93,7 @@ mcp = FastMCP(
 
     Available tools:
     - execute_query: Execute queries in 1C query language
-    - execute_code: Execute arbitrary 1C code (with safety restrictions)
+    - execute_code: Execute arbitrary 1C code (permissions controlled by 1C)
     - get_metadata: Get information about database structure and metadata
     - get_event_log: Get event log entries with filtering by date, level, and event type
     - get_object_by_link: Get 1C object data by navigation link
@@ -302,6 +111,15 @@ mcp = FastMCP(
 
 
 async def _execute_1c_command(tool: str, params: Dict[str, Any], channel: str = "default", timeout: Optional[float] = None) -> Dict[str, Any]:
+    if tool == 'get_screenshot' and ('target' in params or 'session_id' in params):
+        try:
+            GetScreenshotParams.model_validate(params)
+        except ValidationError:
+            return {'success': False, 'error': 'invalid_params: invalid screenshot target or selectors'}
+    from .test_client_contract import TEST_TOOLS
+    if tool in TEST_TOOLS:
+        from .test_client_operations import execute_test_operation
+        return await execute_test_operation(channel, tool, params)
     from .consumer_registry import consumer_registry, current_consumer, ConsumerChanged
     duration = float(timeout if timeout is not None else settings.timeout)
     async def bound_call():
@@ -627,7 +445,7 @@ async def execute_code(ctx: Context, code: str, execution_context: Literal["serv
     - Do NOT declare procedures/functions (`Процедура/Функция`) inside the snippet.
     - Do NOT use `Возврат` (Return). Instead assign a value to `Результат`.
 
-    WARNING: Some dangerous operations are blocked for safety reasons.
+    The connected 1C processing decides whether to deny, ask, or allow execution.
 
     Args:
         ctx: MCP Context (injected automatically)
@@ -671,40 +489,38 @@ async def execute_code(ctx: Context, code: str, execution_context: Literal["serv
             "error": f"Ошибка типа данных: {str(e)} / Type error: {str(e)}"
         }
     
-    # Check for dangerous keywords (blacklist validation)
-    # Validates: Requirement 3.5 - mechanism for blocking dangerous operations
-    found_dangerous = find_dangerous_keywords(validated.code, settings.dangerous_keywords)
-    
-    if found_dangerous:
-        keywords_str = ", ".join(found_dangerous)
-        if settings.allow_dangerous_with_approval:
-            # Approval mode: send to 1C with requires_approval flag
-            logger.info(f"Dangerous code requires approval: {found_dangerous}")
-            result = await _execute_1c_command("execute_code", {
-                "code": validated.code,
-                "execution_context": validated.execution_context,
-                "requires_approval": True,
-                "dangerous_keywords": found_dangerous
-            }, channel=channel)
-        else:
-            # Block mode (default): reject dangerous code
-            logger.warning(f"Blocked dangerous operation: {found_dangerous}")
-            return {
-                "success": False,
-                "error": "Запрет proxy: ALLOW_DANGEROUS_WITH_APPROVAL=false. "
-                         "Режим разрешений формы Toolkit не отменяет этот запрет. "
-                         f"Опасные ключевые слова: {keywords_str} / "
-                         f"Proxy blocked dangerous code: {keywords_str}",
-                "dangerous_keywords": found_dangerous,
-            }
-    else:
-        # Safe code: execute normally
-        result = await _execute_1c_command("execute_code", {
-            "code": validated.code,
-            "execution_context": validated.execution_context,
-        }, channel=channel)
-    
-    return result
+    # The 1C processing owns permission checks and session approval state.
+    return await _execute_1c_command("execute_code", {
+        "code": validated.code,
+        "execution_context": validated.execution_context,
+    }, channel=channel)
+
+
+@mcp.tool()
+async def execute_code_operation(ctx: Context, request_id: str, code: str,
+                                 execution_context: Literal["server", "client"] = "server",
+                                 wait_timeout_ms: int = 0) -> Dict[str, Any]:
+    """Execute code once per channel/request_id with durable status and late result.
+
+    Requires OPERATION_JOURNAL_DIR. Reuse the SAME key and content after timeout;
+    changed content is request_conflict. Timeout is not cancellation. Result TTL
+    is 24 hours; expired keys are never reusable. Permissions remain in 1C.
+    Existing execute_code retains its legacy behavior. test_* is not enabled.
+    """
+    from .operation_api import execute_operation
+    return await execute_operation(_get_channel_from_context(ctx), request_id, code,
+                                   execution_context, wait_timeout_ms)
+
+
+@mcp.tool()
+async def get_operation(ctx: Context, operation_id: str) -> Dict[str, Any]:
+    """Read durable status/result in the current channel without executing code.
+
+    unknown requires reconciliation, never an automatic retry with a new key.
+    success describes this status lookup; inspect status/result for execution.
+    """
+    from .operation_api import operation_status
+    return await operation_status(_get_channel_from_context(ctx), operation_id)
 
 
 @mcp.tool()
@@ -1539,9 +1355,14 @@ async def get_screenshot(
     highlight_rects: Optional[Annotated[List[HighlightRectItem], Field(max_length=20)]] = None,
     link: Optional[str] = None,
     page_name: Optional[str] = None,
+    target: Optional[Literal['toolkit', 'test_client']] = None,
+    session_id: Optional[str] = None,
 ) -> Union[List[Union[ImageContent, TextContent]], ImageContent, Dict[str, Any]]:
     """
     Captures the main 1C window, including open dropdowns, menus and dialogs.
+    target=toolkit (or omitted) preserves the existing capture. target=test_client
+    requires session_id and verified client process/window identity;
+    it never substitutes an image of the Toolkit manager.
     To capture an already open dropdown, omit form_name.
     With form_name or link the capture starts only after the form has had time to render
     (~1.5 s wait, activation, ~0.7 s more).
@@ -1594,6 +1415,8 @@ async def get_screenshot(
     channel = _get_channel_from_context(ctx)
     try:
         validated = GetScreenshotParams(
+            target=target,
+            session_id=session_id,
             form_name=form_name,
             link=link,
             page_name=page_name,
@@ -1609,6 +1432,10 @@ async def get_screenshot(
         "scale_percent": validated.scale_percent,
         "show_grid": validated.show_grid,
     }
+    if validated.target is not None:
+        params['target'] = validated.target
+    if validated.session_id is not None:
+        params['session_id'] = validated.session_id
     if validated.form_name is not None:
         params["form_name"] = validated.form_name
     if validated.link is not None:
@@ -1651,6 +1478,9 @@ async def get_screenshot(
                     layers["overlay_failures"] = result["overlay_failures"]
                 if result.get("foreground_window") is not None:
                     layers["foreground_window"] = result["foreground_window"]
+                for key in ("capture_target", "target", "session_id", "image_anonymized"):
+                    if result.get(key) is not None:
+                        layers[key] = result[key]
                 parts.append(TextContent(type="text", text=json.dumps(layers)))
             if "base" in result:
                 parts.append(TextContent(type="text", text=json.dumps({"base": result["base"]}, ensure_ascii=False)))
@@ -1659,6 +1489,27 @@ async def get_screenshot(
             return [image, TextContent(type="text", text=json.dumps({"base": result["base"]}, ensure_ascii=False))]
         return image
     return result
+
+
+@mcp.tool()
+async def set_approval_mode(ctx: Context, mode: Literal["deny", "ask", "session_allow"]) -> Dict[str, Any]:
+    """Set dangerous-operation mode for this Toolkit session: deny, ask, session_allow.
+    Shared by all clients. session_allow resets on disconnect/restart and is never persisted.
+    Does not grant platform permissions or execute pending commands.
+    """
+    try:
+        params = SetApprovalModeParams(mode=mode)
+    except ValidationError as exc:
+        return {"success": False, "error": str(exc)}
+    return await _execute_1c_command(
+        "set_approval_mode", params.model_dump(), channel=_get_channel_from_context(ctx))
+
+
+# FastMCP otherwise ignores extra arguments before the function can validate them.
+_approval_tool = mcp._tool_manager.get_tool("set_approval_mode")
+_approval_tool.fn_metadata.arg_model.model_config["extra"] = "forbid"
+_approval_tool.fn_metadata.arg_model.model_rebuild(force=True)
+_approval_tool.parameters["additionalProperties"] = False
 
 
 @mcp.tool()
@@ -1743,6 +1594,9 @@ async def _list_channel_tools():
     channel = _get_channel_from_context(mcp.get_context())
     owner = consumer_registry.consumers.get(channel)
     tools = await mcp.list_tools()
+    from .test_client_contract import TEST_TOOL_SCHEMAS
+    from mcp.types import Tool
+    tools.extend(Tool(**schema) for schema in TEST_TOOL_SCHEMAS)
     if owner and owner.retired and owner.mode == 'server_host':
         return []
     if owner and not owner.retired and owner.mode == 'server_host':
@@ -1754,6 +1608,15 @@ async def _list_channel_tools():
                 description = (tool.description or '').split('\n\nNOTE: Anonymization is enabled for this tool.')[0]
                 tool.description = description + '\nAnonymization tokens use [CATEGORY-GENERATION-NNNNN]. Pass tokens unchanged in subsequent requests. Request fresh data after a restart; tokens from another generation are rejected.'
     return tools
+
+
+@mcp._mcp_server.call_tool(validate_input=False)
+async def _call_channel_tool(name, arguments):
+    from .test_client_contract import TEST_TOOLS
+    if name in TEST_TOOLS:
+        result = await _execute_1c_command(name, arguments, _get_channel_from_context(mcp.get_context()))
+        return [TextContent(type='text', text=json.dumps(result, ensure_ascii=False))]
+    return await mcp.call_tool(name, arguments)
 
 
 def get_mcp_server() -> FastMCP:

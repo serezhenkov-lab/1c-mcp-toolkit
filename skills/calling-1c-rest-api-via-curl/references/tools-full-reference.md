@@ -439,15 +439,14 @@ Execute arbitrary 1C code (statement block via `Выполнить`).
 - Cannot declare `Процедура` / `Функция`
 - Cannot use `Возврат`
 
-### Dangerous keywords
+### Execution permissions
 
-The following keywords are blocked by default (configurable via `DANGEROUS_KEYWORDS` env var):
-
-`Удалить`, `Delete`, `Записать`, `Write`, `УстановитьПривилегированныйРежим`, `SetPrivilegedMode`, `ПодключитьВнешнююКомпоненту`, `AttachAddIn`, `УстановитьВнешнююКомпоненту`, `InstallAddIn`, `COMОбъект`, `COMObject`, `УстановитьМонопольныйРежим`, `SetExclusiveMode`, `УдалитьФайлы`, `DeleteFiles`, `КопироватьФайл`, `CopyFile`, `ПереместитьФайл`, `MoveFile`, `СоздатьКаталог`, `CreateDirectory`
-
-Behavior when dangerous keyword detected:
-- `ALLOW_DANGEROUS_WITH_APPROVAL=false` (default): returns `success=false` immediately
-- `ALLOW_DANGEROUS_WITH_APPROVAL=true`: sends to 1C with `requires_approval=true`, waits for user decision in 1C UI
+The connected 1C processing detects dangerous operations and applies its current
+mode: deny, ask for each command, or allow for the current session. The proxy
+validates the request, forwards code and execution context to the selected channel,
+and returns the processing result (including rejections). It does not filter code
+or add approval flags. Legacy `ALLOW_DANGEROUS_WITH_APPROVAL` and
+`DANGEROUS_KEYWORDS` environment variables are ignored by the updated proxy.
 
 ### Examples
 

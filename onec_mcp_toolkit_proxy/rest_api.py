@@ -15,7 +15,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from pydantic import ValidationError
 
-from .mcp_handler import _execute_1c_command, find_dangerous_keywords
+from .mcp_handler import _execute_1c_command
 from .config import settings
 from .tools import (
     ExecuteQueryParams,
@@ -30,6 +30,7 @@ from .tools import (
     GetBslSyntaxHelpParams,
     SubmitForDeanonymizationParams,
     GetScreenshotParams,
+    SetApprovalModeParams,
 )
 from .channel_registry import ChannelRegistry, DEFAULT_CHANNEL, CHANNEL_ID_PATTERN
 from .anonymizer.registry import AnonymizerRegistry
@@ -561,11 +562,10 @@ async def execute_code_handler(request: Request) -> JSONResponse:
     Validates: Requirements 2.1, 2.2, 2.3, 2.4
     - 2.1: POST request with JSON body {"code": "..."} executes code
     - 2.2: Empty or missing code returns HTTP 422
-    - 2.3: Dangerous keywords trigger blocking/approval logic (same as MCP)
+    - 2.3: The connected 1C processing controls execution permissions (same as MCP)
     - 2.4: Successful execution returns value of 'Результат' variable in data field
     
-    IMPORTANT: Reuses dangerous keyword checking logic from mcp_handler.py
-    (find_dangerous_keywords, settings.dangerous_keywords, settings.allow_dangerous_with_approval).
+    The proxy validates the request and forwards it without a code permission filter.
     
     Order of checks: Content-Type (415) → JSON parsing (400) → validation (422)
     
@@ -575,15 +575,8 @@ async def execute_code_handler(request: Request) -> JSONResponse:
         "execution_context": "server"  // optional, "server" (default) or "client"
     }
     
-    Response for dangerous code (blocked):
-    {
-        "success": false,
-        "error": "Код содержит опасные ключевые слова: УдалитьОбъект / Code contains dangerous keywords: УдалитьОбъект"
-    }
-    
-    Response for dangerous code when approval mode is enabled:
-    The command is sent to 1C with requires_approval flag and this endpoint waits
-    for the final result (approved execution result OR rejected error).
+    The endpoint waits for the 1C result, including a rejection or an approved
+    execution result according to the processing's current permission mode.
     """
     # Step 1: Check Content-Type
     content_type_error = _check_content_type(request)
@@ -608,35 +601,7 @@ async def execute_code_handler(request: Request) -> JSONResponse:
     # Step 5: Get channel from request
     channel = _get_channel(request)
     
-    # Step 6: Check for dangerous keywords (same logic as MCP handler)
-    found_dangerous = find_dangerous_keywords(validated_params.code, settings.dangerous_keywords)
-    
-    if found_dangerous:
-        keywords_str = ", ".join(found_dangerous)
-        
-        if settings.allow_dangerous_with_approval:
-            # Approval mode: send to 1C with requires_approval flag (same as MCP handler)
-            logger.info(f"REST API: Dangerous code requires approval: {found_dangerous}")
-            params_dict = {
-                "code": validated_params.code,
-                "execution_context": validated_params.execution_context,
-                "requires_approval": True,
-                "dangerous_keywords": found_dangerous
-            }
-            result = await _execute_1c_command("execute_code", params_dict, channel)
-            return JSONResponse(content=result)
-        else:
-            # Block mode (default): reject dangerous code
-            logger.warning(f"REST API: Blocked dangerous operation: {found_dangerous}")
-            return JSONResponse(content={
-                "success": False,
-                "error": f"Операция запрещена: код содержит опасные ключевые слова: {keywords_str} / "
-                         f"Operation not allowed: code contains dangerous keywords: {keywords_str}",
-                "dangerous_keywords": found_dangerous
-            })
-    
-    # Step 7: Execute command via _execute_1c_command
-    # Convert validated params to dict for _execute_1c_command
+    # Step 6: Forward to 1C; permission checks belong to the processing.
     params_dict = {
         "code": validated_params.code,
         "execution_context": validated_params.execution_context,
@@ -644,7 +609,7 @@ async def execute_code_handler(request: Request) -> JSONResponse:
     
     result = await _execute_1c_command("execute_code", params_dict, channel)
     
-    # Step 8: Return result as JSONResponse
+    # Step 7: Return result as JSONResponse
     return JSONResponse(content=result)
 
 
@@ -1366,6 +1331,22 @@ async def get_screenshot_handler(request: Request) -> JSONResponse:
     channel = _get_channel(request)
     result = await _execute_1c_command(
         "get_screenshot", validated.model_dump(exclude_none=True), channel)
+    return JSONResponse(content=result)
+
+
+async def set_approval_mode_handler(request: Request) -> JSONResponse:
+    """POST /api/set_approval_mode: change the mode in the selected 1C session."""
+    content_type_error = _check_content_type(request)
+    if content_type_error:
+        return content_type_error
+    body, parse_error = await _parse_json_body_with_encoding_detection(request)
+    if parse_error:
+        return parse_error
+    try:
+        params = SetApprovalModeParams.model_validate(body)
+    except ValidationError as exc:
+        return _validation_error_response(exc)
+    result = await _execute_1c_command("set_approval_mode", params.model_dump(), _get_channel(request))
     return JSONResponse(content=result)
 
 

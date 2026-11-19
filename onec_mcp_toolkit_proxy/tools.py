@@ -11,6 +11,12 @@ import re
 import json
 from typing import Any, Dict, List, Literal, Optional, Union
 from pydantic import BaseModel, Field, RootModel, StrictBool, field_validator, model_validator
+from .approval_control import SET_APPROVAL_MODE_SCHEMA
+
+
+class SetApprovalModeParams(BaseModel):
+    model_config = {"extra": "forbid"}
+    mode: Literal["deny", "ask", "session_allow"]
 
 
 def validate_types_int_input(v: Any) -> Optional[int]:
@@ -1715,6 +1721,8 @@ GET_SCREENSHOT_SCHEMA = {
     "inputSchema": {
         "type": "object",
         "properties": {
+            "target": {"type": "string", "enum": ["toolkit", "test_client"], "description": "Omitted/toolkit preserves existing capture; test_client requires session_id and verified client process/window identity."},
+            "session_id": {"type": "string", "minLength": 1, "maxLength": 128, "description": "Required only for target=test_client."},
             "form_name": {
                 "type": "string",
                 "description": "Optional. 1C form name to open (or activate if already open) before capture. The tool waits ~1.5 s for the form to render, activates it, waits ~0.7 s more and only then captures. The form is closed afterwards only if this request opened it; an already open form remains open. If omitted, captures the current active 1C window immediately. Mutually exclusive with link.",
@@ -1784,6 +1792,8 @@ GET_SCREENSHOT_SCHEMA = {
 
 
 class GetScreenshotParams(BaseModel):
+    target: Optional[Literal['toolkit', 'test_client']] = None
+    session_id: Optional[str] = Field(default=None, strict=True, min_length=1, max_length=128)
     form_name: Optional[str] = Field(default=None)
     link: Optional[str] = Field(default=None)
     page_name: Optional[str] = Field(default=None)
@@ -1852,6 +1862,13 @@ class GetScreenshotParams(BaseModel):
 
     @model_validator(mode='after')
     def check_selector_combination(self) -> 'GetScreenshotParams':
+        if self.target == 'test_client':
+            if self.session_id is None:
+                raise ValueError('session_id is required for target=test_client')
+            if any(v is not None for v in (self.form_name, self.link, self.page_name)):
+                raise ValueError('test_client does not accept toolkit form/link/page selectors')
+        elif self.session_id is not None:
+            raise ValueError('session_id requires target=test_client')
         if self.form_name is not None and self.link is not None:
             raise ValueError("form_name and link are mutually exclusive")
         if self.page_name is not None and self.form_name is None and self.link is None:
@@ -1900,6 +1917,7 @@ CLOSE_1C_SESSION_SCHEMA = {
 
 # List of all tool schemas
 ALL_TOOL_SCHEMAS = [
+    SET_APPROVAL_MODE_SCHEMA,
     EXECUTE_QUERY_SCHEMA,
     EXECUTE_CODE_SCHEMA,
     GET_METADATA_SCHEMA,

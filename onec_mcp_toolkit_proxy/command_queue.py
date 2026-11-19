@@ -33,16 +33,21 @@ class Command:
     result_event: asyncio.Event = field(default_factory=asyncio.Event)
     deadline: Optional[float] = None
     consumer: Any = None
+    durable: bool = False
     queued_at_monotonic: float = field(default_factory=lambda: time.monotonic())
     dispatched_at_monotonic: Optional[float] = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert command to dictionary for JSON serialization."""
-        return {
+        result = {
             "id": self.id,
             "tool": self.tool,
             "params": self.params
         }
+        if self.durable:
+            result['lifecycle_version'] = 1
+            result['lifecycle_progress_version'] = 1
+        return result
 
 
 class CommandQueue:
@@ -78,13 +83,14 @@ class CommandQueue:
         async with self._lock:
             return self._add_command(tool, params)
 
-    def _add_command(self, tool: str, params: Dict[str, Any], timeout: Optional[float] = None) -> str:
+    def _add_command(self, tool: str, params: Dict[str, Any], timeout: Optional[float] = None, *, identifier=None, durable=False) -> str:
         """Publish without suspension; all queue state belongs to one event loop."""
-        command_id = str(uuid.uuid4())
+        command_id = identifier or str(uuid.uuid4())
         command = Command(
             id=command_id,
             tool=tool,
             params=params,
+            durable=durable,
             deadline=time.monotonic() + timeout if timeout is not None else None,
         )
         
@@ -93,7 +99,7 @@ class CommandQueue:
         self._available.set()
         return command_id
     
-    async def get_next_command(self, timeout: Optional[float] = None) -> Optional[Command]:
+    async def get_next_command(self, timeout: Optional[float] = None, *, allowed_tools=None) -> Optional[Command]:
         """
         Get the next command from the queue (for 1C polling).
         
@@ -104,6 +110,8 @@ class CommandQueue:
         Returns:
             Next command or None if no command available within timeout.
         """
+        if allowed_tools is not None and timeout not in (None, 0):
+            raise ValueError('Filtered delivery must be nonblocking')
         deadline = time.monotonic() + timeout if timeout and timeout > 0 else None
         while True:
             # A blocked event loop can resume this poll after its HTTP client
@@ -111,7 +119,14 @@ class CommandQueue:
             if deadline is not None and time.monotonic() >= deadline:
                 return None
             if self._queue:
-                _, command = self._queue.popitem(last=False)
+                if allowed_tools is None:
+                    _, command = self._queue.popitem(last=False)
+                else:
+                    identifier = next((key for key, value in self._queue.items()
+                                       if value.tool in allowed_tools), None)
+                    if identifier is None:
+                        return None
+                    command = self._queue.pop(identifier)
                 if not self._queue:
                     self._available.clear()
                 return command
@@ -206,6 +221,7 @@ class CommandQueue:
         expired_ids = [
             cmd_id for cmd_id, cmd in self._pending.items()
             if cmd_id not in self._waiters
+            and not cmd.durable
             and (now - cmd.created_at).total_seconds() > max_age_seconds
         ]
         for cmd_id in expired_ids:
@@ -259,15 +275,59 @@ class ChannelCommandQueue:
         self._channels: Dict[str, CommandQueue] = {}
         self._command_index: Dict[str, str] = {}  # command_id -> channel
         self._lock = asyncio.Lock()
+        self._journal = None
         
         # Default channel always exists
         self._channels["default"] = CommandQueue()
+
+    def operation_store(self):
+        if getattr(self, '_journal', None) is None:
+            import os
+            from pathlib import Path
+            from .operation_journal import OperationJournal, OperationError
+            directory = os.environ.get('OPERATION_JOURNAL_DIR', '')
+            if not directory or not Path(directory).is_absolute():
+                raise OperationError('operation_store_not_configured')
+            self._journal = OperationJournal(directory)
+        return self._journal
+
+    async def add_operation(self, channel, request_id, tool, params, *, context=None):
+        """Durable admission before publication into the EXISTING dispatch queue."""
+        from .consumer_registry import current_consumer, check_current
+        from .operation_journal import canonical
+        import json
+        async with self._lock:
+            check_current()
+            store = self.operation_store()
+            # Freeze parameters: callers cannot change admitted content later.
+            params = json.loads(canonical(params))
+            identifier, fresh = store.reserve(channel, request_id, tool, params, context=context)
+            if fresh:
+                queue = self._channels.setdefault(channel, CommandQueue())
+                queue._add_command(tool, params, identifier=identifier, durable=True)
+                queue._pending[identifier].consumer = current_consumer.get()
+                self._command_index[identifier] = channel
+            return identifier
+
+    async def observe_operation(self, channel, command_id, state, sequence, progress=None):
+        """Nonterminal executor event: never completes a waiter or dispatches code."""
+        async with self._lock:
+            command = self.get_command(command_id)
+            if (command is None or not command.durable or command.dispatched_at_monotonic is None
+                    or self._command_index.get(command_id) != channel or command.result_event.is_set()):
+                return False
+            if command.consumer is not None:
+                from .consumer_registry import consumer_registry
+                consumer_registry.check(command.consumer)
+            return self.operation_store().observe(command_id, state, sequence, progress)
 
     def invalidate_consumer(self, consumer):
         queue = self._channels.get(consumer.channel)
         if queue:
             for command in list(queue._pending.values()):
                 if command.consumer is consumer:
+                    if command.durable:
+                        self.operation_store().transition(command.id, 'unknown', 'consumer_changed')
                     queue._queue.pop(command.id, None)
                     queue._results[command.id] = {'success': False, 'error': '1C channel owner changed'}
                     command.result_event.set()
@@ -287,7 +347,7 @@ class ChannelCommandQueue:
             return snapshot
         for command in queue._pending.values():
             if (self._command_index.get(command.id) != channel or command.result_event.is_set()
-                    or (command.deadline is not None and command.deadline <= now)):
+                    or (not command.durable and command.deadline is not None and command.deadline <= now)):
                 continue
             if command.dispatched_at_monotonic is None:
                 group, started = 'queued', command.queued_at_monotonic
@@ -339,10 +399,12 @@ class ChannelCommandQueue:
         for command_id in command_ids:
             command = queue._pending.get(command_id) if queue is not None else None
             remaining = max(0, int((command.deadline - now) * 1000)) if command and command.deadline is not None else 0
+            if command and command.durable and not command.result_event.is_set():
+                remaining = 86400000  # executor lease hint, not caller wait deadline
             result.append({"id": command_id, "active": bool(command and remaining > 0), "remaining_ms": remaining})
         return result
     
-    async def get_next_command(self, channel: str, timeout: Optional[float] = None, consumer=None) -> Optional[Command]:
+    async def get_next_command(self, channel: str, timeout: Optional[float] = None, consumer=None, *, allowed_tools=None) -> Optional[Command]:
         """
         Get the next command from a channel's queue.
         
@@ -383,7 +445,7 @@ class ChannelCommandQueue:
             else:
                 current_timeout = timeout
             
-            command = await queue.get_next_command(current_timeout)
+            command = await queue.get_next_command(current_timeout, allowed_tools=allowed_tools)
             if command is None:
                 return None
             
@@ -404,6 +466,10 @@ class ChannelCommandQueue:
                             raise
                     if command.result_event.is_set():
                         continue
+                    if command.durable:
+                        # Commit possible execution BEFORE handing a command to either transport.
+                        if not self.operation_store().transition(command.id, 'running'):
+                            continue
                     # Only accepted delivery counts; a rejected owner can requeue it.
                     if command.dispatched_at_monotonic is None:
                         command.dispatched_at_monotonic = time.monotonic()
@@ -437,6 +503,10 @@ class ChannelCommandQueue:
         if queue is None:
             return False
         
+        command = queue._pending.get(command_id)
+        if command is not None and command.durable:
+            if not self.operation_store().finish(command_id, result):
+                return False
         # Outside lock: set result
         # Do NOT delete index here - that's done by wait_for_result
         return await queue.set_result(command_id, result)
@@ -459,6 +529,12 @@ class ChannelCommandQueue:
             asyncio.TimeoutError: If timeout is exceeded
             KeyError: If command_id is not found
         """
+        command = self.get_command(command_id)
+        if command is not None and command.durable:
+            # Cancelling a waiter never cancels delivery or drops a late result.
+            channel = self._command_index[command_id]
+            await asyncio.wait_for(command.result_event.wait(), timeout)
+            return self.operation_store().snapshot(channel, command_id)
         try:
             channel = self._command_index.get(command_id)
             if channel is None:
@@ -480,7 +556,13 @@ class ChannelCommandQueue:
         """Reap abandoned commands, preserving waits with their own timeouts."""
         removed = 0
         async with self._lock:
+            if self._journal is not None:
+                self._journal.expire_results()
             for queue in self._channels.values():
+                for command in list(queue._pending.values()):
+                    if command.durable and command.result_event.is_set():
+                        queue._remove_command(command.id)
+                        self._command_index.pop(command.id, None)
                 expired_ids = queue._cleanup_expired(max_age_seconds)
                 for command_id in expired_ids:
                     self._command_index.pop(command_id, None)

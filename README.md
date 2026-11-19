@@ -1,5 +1,10 @@
 # 1C MCP Toolkit — файловый мост для 1С через RDP
 
+Управление одним тест-клиентом 8.5 через встроенный HTTP/MCP внешней обработки:
+[запуск, меню, панели и контракт команд MVP](docs/http-mvp.md).
+
+[Переключение опасных операций командой set_approval_mode](docs/approval-control.md).
+
 Форк [ROCTUP/1c-mcp-toolkit](https://github.com/ROCTUP/1c-mcp-toolkit).
 Мы добавили файловый транспорт между локальным Python-прокси и внешней
 обработкой в открытом сеансе 1С. Агент на компьютере разработчика может
@@ -190,7 +195,7 @@ HTTP-сервер запускается прямо внутри обработ�
 Запуск прокси-сервера из готового образа на Docker Hub:
 
 ```bash
-docker run -d -p 6003:6003 -e ALLOW_DANGEROUS_WITH_APPROVAL=true --restart unless-stopped --name 1c-mcp-toolkit-proxy roctup/1c-mcp-toolkit-proxy
+docker run -d -p 6003:6003 --restart unless-stopped --name 1c-mcp-toolkit-proxy roctup/1c-mcp-toolkit-proxy
 ```
 
 ### Вариант 2: Docker Compose
@@ -386,8 +391,8 @@ python -m onec_mcp_toolkit_proxy
 
 ## 🔒 Безопасность
 
-- Опасные операции блокируются настраиваемым черным списком
-- Используйте `ALLOW_DANGEROUS_WITH_APPROVAL=true` для режима подтверждения
+- Разрешениями на выполнение кода управляет обработка 1С: «Запрещать», «Спрашивать каждый раз» или «Разрешить всё в текущем сеансе».
+- Прокси передаёт команду обработке и возвращает её результат; отдельного фильтра опасного кода в прокси нет.
 - Рекомендуется настроить `autoApprove` только для безопасных инструментов
 
 ## 📝 Изоляция каналов
@@ -457,5 +462,7 @@ Skills содержат подробные инструкции и reference-д�
 ## 📚 Документация
 
 Подробная документация доступна в **[README_FULL](./README_FULL.md)** 
+
+В разработке: [общий lifecycle операций в proxy](openspec/changes/rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/lifecycle-proxy-partial.md). Новые native MCP `execute_code_operation` и `get_operation` используют явно настроенный `OPERATION_JOURNAL_DIR`, сохраняют поздний результат и защищают повтор по request_id. Legacy `execute_code` сохраняет прежнее поведение. [Состояния подтверждения из 1С](openspec/changes/rezhimy-podtverzhdeniya-i-izolyatsiya-chatov/lifecycle-approval.md) проверены через HTTP и файловый мост; интеграция `test_*` и полная приёмка ещё не завершены.
 
 

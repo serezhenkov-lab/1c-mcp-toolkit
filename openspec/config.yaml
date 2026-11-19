@@ -10,7 +10,7 @@ context: |
 operations:
   archive:
     guidance:
-      - Сохранять estimate.md с историей, если он существует, и проверять ссылки единого журнала .codex/time-tracking.md без переноса или повторного начисления интервалов.
+      - Сохранять estimate.md с историей, если он существует, и проверять ссылки единого журнала time-tracking.md без переноса или повторного начисления интервалов.
 
 # Project context (optional)
 # Add only constraints that should guide OpenSpec artifacts and workflows.

@@ -1,0 +1,256 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Form xmlns="http://v8.1c.ru/8.3/xcf/logform" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:dcscor="http://v8.1c.ru/8.1/data-composition-system/core" xmlns:dcssch="http://v8.1c.ru/8.1/data-composition-system/schema" xmlns:dcsset="http://v8.1c.ru/8.1/data-composition-system/settings" xmlns:ent="http://v8.1c.ru/8.1/data/enterprise" xmlns:lf="http://v8.1c.ru/8.2/managed-application/logform" xmlns:style="http://v8.1c.ru/8.1/data/ui/style" xmlns:sys="http://v8.1c.ru/8.1/data/ui/fonts/system" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:v8ui="http://v8.1c.ru/8.1/data/ui" xmlns:web="http://v8.1c.ru/8.1/data/ui/colors/web" xmlns:win="http://v8.1c.ru/8.1/data/ui/colors/windows" xmlns:xr="http://v8.1c.ru/8.3/xcf/readable" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.17">
+	<Title>
+		<v8:item>
+			<v8:lang>ru</v8:lang>
+			<v8:content>Input Fixture</v8:content>
+		</v8:item>
+	</Title>
+	<AutoTitle>false</AutoTitle>
+	<AutoCommandBar name="ФормаКоманднаяПанель" id="-1"/>
+	<Events>
+		<Event name="OnCreateAtServer">ПриСозданииНаСервере</Event>
+	</Events>
+	<ChildItems>
+		<InputField name="Текст" id="1">
+			<DataPath>Текст</DataPath><Events><Event name="OnChange">ТекстПриИзменении</Event></Events>
+			<ContextMenu name="ТекстКонтекстноеМеню" id="2"/>
+			<ExtendedTooltip name="ТекстРасширеннаяПодсказка" id="3"/>
+		</InputField>
+		<CheckBoxField name="Флаг" id="4">
+			<DataPath>Флаг</DataPath>
+			<TitleLocation>Right</TitleLocation>
+			<CheckBoxType>Auto</CheckBoxType>
+			<ContextMenu name="ФлагКонтекстноеМеню" id="5"/>
+			<ExtendedTooltip name="ФлагРасширеннаяПодсказка" id="6"/>
+		</CheckBoxField>
+		<InputField name="Результат" id="7">
+			<DataPath>Результат</DataPath>
+			<ReadOnly>true</ReadOnly>
+			<ContextMenu name="РезультатКонтекстноеМеню" id="8"/>
+			<ExtendedTooltip name="РезультатРасширеннаяПодсказка" id="9"/>
+		</InputField>
+		<Table name="Строки" id="10">
+			<ChangeRowSet>true</ChangeRowSet>
+			<DataPath>Строки</DataPath>
+			<ContextMenu name="СтрокиКонтекстноеМеню" id="11"/>
+			<AutoCommandBar name="СтрокиКоманднаяПанель" id="12"/>
+			<ExtendedTooltip name="СтрокиРасширеннаяПодсказка" id="13"/>
+			<SearchStringAddition name="СтрокиСтрокаПоиска" id="14">
+				<AdditionSource>
+					<Item>Строки</Item>
+					<Type>SearchStringRepresentation</Type>
+				</AdditionSource>
+				<ContextMenu name="СтрокиСтрокаПоискаКонтекстноеМеню" id="15"/>
+				<ExtendedTooltip name="СтрокиСтрокаПоискаРасширеннаяПодсказка" id="16"/>
+			</SearchStringAddition>
+			<ViewStatusAddition name="СтрокиСостояниеПросмотра" id="17">
+				<AdditionSource>
+					<Item>Строки</Item>
+					<Type>ViewStatusRepresentation</Type>
+				</AdditionSource>
+				<ContextMenu name="СтрокиСостояниеПросмотраКонтекстноеМеню" id="18"/>
+				<ExtendedTooltip name="СтрокиСостояниеПросмотраРасширеннаяПодсказка" id="19"/>
+			</ViewStatusAddition>
+			<SearchControlAddition name="СтрокиУправлениеПоиском" id="20">
+				<AdditionSource>
+					<Item>Строки</Item>
+					<Type>SearchControl</Type>
+				</AdditionSource>
+				<ContextMenu name="СтрокиУправлениеПоискомКонтекстноеМеню" id="21"/>
+				<ExtendedTooltip name="СтрокиУправлениеПоискомРасширеннаяПодсказка" id="22"/>
+			</SearchControlAddition>
+			<ChildItems>
+				<InputField name="СтрокиКлюч" id="23">
+					<DataPath>Строки.Ключ</DataPath>
+					<ContextMenu name="СтрокиКлючКонтекстноеМеню" id="24"/>
+					<ExtendedTooltip name="СтрокиКлючРасширеннаяПодсказка" id="25"/>
+				</InputField>
+				<InputField name="СтрокиЗначение" id="26">
+					<DataPath>Строки.Значение</DataPath>
+					<ContextMenu name="СтрокиЗначениеКонтекстноеМеню" id="27"/>
+					<ExtendedTooltip name="СтрокиЗначениеРасширеннаяПодсказка" id="28"/>
+				</InputField>
+			</ChildItems>
+		</Table>
+		<Button name="Проверить" id="29">
+			<CommandName>Form.Command.Проверить</CommandName>
+			<ExtendedTooltip name="ПроверитьРасширеннаяПодсказка" id="30"/>
+		</Button>
+		<Button name="Диалог" id="31">
+			<CommandName>Form.Command.Диалог</CommandName>
+			<ExtendedTooltip name="ДиалогРасширеннаяПодсказка" id="32"/>
+		</Button>
+		<InputField name="Выбор" id="33">
+			<DataPath>Выбор</DataPath>
+			<ChoiceButton>true</ChoiceButton>
+			<ContextMenu name="ВыборКонтекстноеМеню" id="34"/>
+			<ExtendedTooltip name="ВыборРасширеннаяПодсказка" id="35"/>
+			<Events>
+				
+			</Events>
+		</InputField>
+		<Pages name="Страницы" id="36">
+			<ExtendedTooltip name="СтраницыРасширеннаяПодсказка" id="37"/>
+			<ChildItems>
+				<Page name="Первая" id="38">
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Первая</v8:content>
+						</v8:item>
+					</Title>
+					<ExtendedTooltip name="ПерваяРасширеннаяПодсказка" id="39"/>
+					<ChildItems>
+						<LabelDecoration name="Метка1" id="40">
+							<Title formatted="false">
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Страница 1</v8:content>
+								</v8:item>
+							</Title>
+							<ContextMenu name="Метка1КонтекстноеМеню" id="41"/>
+							<ExtendedTooltip name="Метка1РасширеннаяПодсказка" id="42"/>
+						</LabelDecoration>
+					</ChildItems>
+				</Page>
+				<Page name="Вторая" id="43">
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Вторая</v8:content>
+						</v8:item>
+					</Title>
+					<ExtendedTooltip name="ВтораяРасширеннаяПодсказка" id="44"/>
+					<ChildItems>
+						<LabelDecoration name="Метка2" id="45">
+							<Title formatted="false">
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Страница 2</v8:content>
+								</v8:item>
+							</Title>
+							<ContextMenu name="Метка2КонтекстноеМеню" id="46"/>
+							<ExtendedTooltip name="Метка2РасширеннаяПодсказка" id="47"/>
+						</LabelDecoration>
+					</ChildItems>
+				</Page>
+			</ChildItems>
+		</Pages>
+	</ChildItems>
+	<Attributes>
+		<Attribute name="Объект" id="48">
+			<Type>
+				<v8:Type>cfg:ExternalDataProcessorObject.ApiFixture</v8:Type>
+			</Type>
+			<MainAttribute>true</MainAttribute>
+		</Attribute>
+		<Attribute name="Текст" id="49">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Текст</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="Флаг" id="50">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Флаг</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:boolean</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="Результат" id="51">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Результат</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="Строки" id="52">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Строки</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>v8:ValueTable</v8:Type>
+			</Type>
+			<Columns>
+				<Column name="Ключ" id="53">
+					<Type>
+						<v8:Type>xs:string</v8:Type>
+						<v8:StringQualifiers>
+							<v8:Length>0</v8:Length>
+							<v8:AllowedLength>Variable</v8:AllowedLength>
+						</v8:StringQualifiers>
+					</Type>
+				</Column>
+				<Column name="Значение" id="54">
+					<Type>
+						<v8:Type>xs:string</v8:Type>
+						<v8:StringQualifiers>
+							<v8:Length>0</v8:Length>
+							<v8:AllowedLength>Variable</v8:AllowedLength>
+						</v8:StringQualifiers>
+					</Type>
+				</Column>
+			</Columns>
+		</Attribute>
+		<Attribute name="Выбор" id="55">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Выбор</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+	</Attributes>
+	<Commands>
+		<Command name="Проверить" id="56">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Проверить</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ПроверитьОбработка</Action>
+		</Command>
+		<Command name="Диалог" id="57">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Диалог</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ДиалогОбработка</Action>
+		</Command>
+	</Commands>
+</Form>

@@ -54,6 +54,9 @@ class FileTransport:
         self.directory = Path(root).resolve() / str(uuid4())
         self.directory.mkdir(parents=True)
         self.active = None
+        self.active_tool = None
+        self.control = None
+        self.restart_sent = False
         write_json(self.directory / 'session.json', {'version': 1, 'channel': channel})
         # Публикуется после готовности сеанса; путь в 1С остаётся постоянным.
         write_json(self.directory.parent / 'current.json', {
@@ -62,31 +65,70 @@ class FileTransport:
         logger.info('RDP file channel: %s (channel=%s)', self.directory.parent, channel)
         logger.info('RDP file session: %s (channel=%s)', self.directory, channel)
 
-    async def step(self):
-        if self.active is not None:
-            response = self.directory / (self.active + '.response.json')
+    async def _collect(self, identifier):
+        if identifier is not None:
+            event_path = self.directory / (identifier + '.lifecycle.json')
+            if event_path.exists():
+                if event_path.stat().st_size > 4096:
+                    raise ValueError('Lifecycle event exceeds 4 KiB')
+                event = self.result_model(**json.loads(event_path.read_text(encoding='utf-8-sig')))
+                if event.id != identifier or event.lifecycle_event is None:
+                    raise ValueError('Invalid lifecycle file event')
+                await self.queue.observe_operation(self.channel, event.id, event.lifecycle_event, event.lifecycle_seq, event.progress)
+                # The writer may replace the file while we read it. Keep the latest
+                # event until final delivery; idempotent observation avoids an unlink race.
+            response = self.directory / (identifier + '.response.json')
             if not response.exists():
                 # Не повторяем команду и не запускаем следующую при неизвестном исходе.
-                return
+                return False
             if response.stat().st_size > 32 * 1024 * 1024:
                 raise ValueError('File response exceeds 32 MiB')
             body = json.loads(response.read_text(encoding='utf-8-sig'))
             result = self.result_model(**body)
-            if result.id != self.active:
+            if result.id != identifier:
                 raise ValueError('File response id mismatch')
             payload = result.model_dump(exclude={'id'}, exclude_none=True)
             if 'base' in result.model_fields_set:
                 payload['base'] = result.base
-            await self.queue.set_result(self.active, payload)
-            for suffix in ('.response.json', '.running', '.request.json'):
-                (self.directory / (self.active + suffix)).unlink(missing_ok=True)
+            await self.queue.set_result(identifier, payload)
+            for suffix in ('.response.json', '.running', '.request.json', '.lifecycle.json', '.fence.json'):
+                (self.directory / (identifier + suffix)).unlink(missing_ok=True)
+            return True
+        return False
+
+    async def step(self):
+        if await self._collect(self.active):
             self.active = None
+            self.active_tool = None
+        if await self._collect(self.control):
+            self.control = None
+        if self.control is not None:
+            return
+        if self.active is not None:
+            # Only an already claimed request can be interrupted. Keep its files
+            # and identity until its own response arrives; never republish it.
+            if (self.restart_sent or self.active_tool in ('restart_1c_session', 'close_1c_session')
+                    or not (self.directory / (self.active + '.running')).exists()):
+                return
+            command = await self.queue.get_next_command(
+                self.channel, timeout=0, allowed_tools={'restart_1c_session'})
+            if command is not None:
+                # Set before IO: an ambiguous publication failure must not retry.
+                self.control = command.id
+                self.restart_sent = True
+                self._publish(command)
+            return
 
         command = await self.queue.get_next_command(self.channel, timeout=0)
         if command is None:
             return
         # Устанавливается до записи: неоднозначную ошибку публикации нельзя повторять.
         self.active = command.id
+        self.active_tool = command.tool
+        self.restart_sent = False
+        self._publish(command)
+
+    def _publish(self, command):
         body = command.to_dict()
         body['channel'] = self.channel
         body['expires_at'] = (command.created_at + timedelta(seconds=self.timeout)).strftime('%Y%m%d%H%M%S')

@@ -1,0 +1,186 @@
+{
+  "implementation_revision": "scenario-context-v1",
+  "platform": "8.5.1.1529",
+  "modes": [
+    "file-http",
+    "file-file",
+    "file-embedded"
+  ],
+  "capabilities": {
+    "test_input:text:finish_focus:none": "finish-focus-runtime.md; action-input-resolution.md; task021-acceptance.md; scenario-fields.md",
+    "test_expect:value:scalar:none": "task021-acceptance.md; scenario-runner-partial.md",
+    "test_inspect:windows:scalar:none": "task034-runtime.md; task021-acceptance.md",
+    "test_inspect:tree:scalar:none": "task034-runtime.md; task021-acceptance.md",
+    "test_inspect:values:scalar:none": "task021-acceptance.md",
+    "test_input:check:scalar:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task041-runtime.md; scenario-capabilities-expansion.md; scenario-capabilities-routes.md"
+    },
+    "test_action:click:button:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task042-runtime.md; task043-runtime.md; scenario-capabilities-expansion.md; scenario-capabilities-routes.md"
+    },
+    "test_action:activate_window:scalar:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task042-runtime.md; task043-runtime.md; scenario-capabilities-expansion.md; scenario-capabilities-routes.md",
+      "limitations": [
+        "Positive acceptance requires a visible test-client window; hidden activation can return action_not_confirmed without retry."
+      ]
+    },
+    "test_expect:visible:scalar:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task013-runtime.md; scenario-capabilities-expansion.md; scenario-capabilities-routes.md; scenario-pages.md"
+    },
+    "test_expect:enabled:scalar:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task013-runtime.md; scenario-capabilities-expansion.md; scenario-capabilities-routes.md; scenario-fields.md"
+    },
+    "test_expect:read_only:scalar:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task013-runtime.md; scenario-capabilities-expansion.md; scenario-capabilities-routes.md; scenario-fields.md"
+    },
+    "test_expect:title:scalar:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task013-runtime.md; scenario-capabilities-expansion.md; scenario-capabilities-routes.md"
+    },
+    "test_input:select:list:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task041-runtime.md; scenario-list-messages.md"
+    },
+    "test_inspect:messages:scalar:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task013-runtime.md; task034-runtime.md; scenario-list-messages.md"
+    },
+    "test_expect:message:scalar:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task013-runtime.md; scenario-list-messages.md"
+    },
+    "test_open:open:scalar:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task013-runtime.md; scenario-window-lifecycle.md"
+    },
+    "test_action:close:scalar:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task042-runtime.md; task043-runtime.md; scenario-window-lifecycle.md"
+    },
+    "test_expect:exists:window:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task013-runtime.md; scenario-window-lifecycle.md"
+    },
+    "test_expect:closed:window:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task013-runtime.md; scenario-window-lifecycle.md"
+    },
+    "test_action:select_page:scalar:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task042-runtime.md; scenario-pages.md",
+      "limitations": [
+        "Native executor must confirm Page/Pages types and current availability before activation; not group-card click."
+      ]
+    },
+    "test_expect:exists:scalar:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task013-runtime.md; task041-runtime.md; scenario-fields.md",
+      "limitations": [
+        "Field presence is scoped to a complete form_tree in an existing live window; unsupported UI areas are not covered."
+      ]
+    },
+    "test_input:text:scalar:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "task013-runtime.md; task041-runtime.md; scenario-fields.md",
+      "limitations": [
+        "Native executor validates input-field kind, availability, automatic finish target and readback; accepted on a string field including empty-string clear. No retry on unknown."
+      ]
+    },
+    "test_expect:editing:table_state:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "scenario-editing.md",
+      "limitations": [
+        "Native table edit mode only; does not identify rows or infer field editing from focus."
+      ]
+    },
+    "test_expect:editing:field_state:none": {
+      "modes": [
+        "file-http",
+        "file-file",
+        "file-embedded"
+      ],
+      "evidence": "scenario-sheet-editing.md",
+      "limitations": [
+        "Only a field whose live native editing property is available as Boolean; accepted on SpreadsheetDocumentField. Ordinary input fields stay unavailable and are blocked by guard. Preflight does not prove a particular field kind."
+      ]
+    }
+  }
+}

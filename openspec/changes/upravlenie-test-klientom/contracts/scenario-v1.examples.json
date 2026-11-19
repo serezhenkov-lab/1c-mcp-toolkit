@@ -1,0 +1,1733 @@
+{
+  "version": 1,
+  "semantic_expectations": "manual contract review; not an implemented preflight",
+  "cases": [
+    {
+      "name": "supported_non_table",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "trusted-ready-same-base",
+      "schema_valid": true,
+      "public_requests_valid": true,
+      "expected_preflight": {
+        "status": "ready",
+        "code": null,
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "unknown_version",
+      "template": {
+        "version": 2,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "trusted-ready-same-base",
+      "schema_valid": false,
+      "public_requests_valid": null,
+      "expected_preflight": {
+        "status": "rejected",
+        "code": "unsupported_version",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "unknown_last_tool",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "execute_code",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "trusted-ready-same-base",
+      "schema_valid": false,
+      "public_requests_valid": null,
+      "expected_preflight": {
+        "status": "rejected",
+        "code": "unknown_step",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "unknown_last_action",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_action",
+            "arguments": {
+              "action": "open_cell_value",
+              "params": {},
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "trusted-ready-same-base",
+      "schema_valid": true,
+      "public_requests_valid": false,
+      "expected_preflight": {
+        "status": "rejected",
+        "code": "unknown_step",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "extra_bsl",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000,
+            "code": "Execute arbitrary code"
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "trusted-ready-same-base",
+      "schema_valid": false,
+      "public_requests_valid": null,
+      "expected_preflight": {
+        "status": "rejected",
+        "code": "invalid_shape",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "missing_parameter_reference",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "missing"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "trusted-ready-same-base",
+      "schema_valid": true,
+      "public_requests_valid": null,
+      "expected_preflight": {
+        "status": "rejected",
+        "code": "invalid_parameter_reference",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "wrong_parameter_type",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": false
+      },
+      "context_case": "trusted-ready-same-base",
+      "schema_valid": true,
+      "public_requests_valid": false,
+      "expected_preflight": {
+        "status": "rejected",
+        "code": "parameter_type_mismatch",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "duplicate_step_id",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "input",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "trusted-ready-same-base",
+      "schema_valid": true,
+      "public_requests_valid": true,
+      "expected_preflight": {
+        "status": "rejected",
+        "code": "duplicate_step_id",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "capability_unknown",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "input-text-capability-unknown",
+      "schema_valid": true,
+      "public_requests_valid": true,
+      "expected_preflight": {
+        "status": "blocked",
+        "code": "capability_unknown",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "capability_unsupported",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "input-text-capability-unsupported",
+      "schema_valid": true,
+      "public_requests_valid": true,
+      "expected_preflight": {
+        "status": "blocked",
+        "code": "capability_unsupported",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "different_base",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "context-base-differs-from-approved-base",
+      "schema_valid": true,
+      "public_requests_valid": true,
+      "expected_preflight": {
+        "status": "blocked",
+        "code": "base_mismatch",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "write_denied",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "owner-policy-read-only",
+      "schema_valid": true,
+      "public_requests_valid": true,
+      "expected_preflight": {
+        "status": "blocked",
+        "code": "data_scope_denied",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "continue_mutation",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "continue_observation",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "trusted-ready-same-base",
+      "schema_valid": true,
+      "public_requests_valid": true,
+      "expected_preflight": {
+        "status": "rejected",
+        "code": "unsupported_error_policy",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "unknown_error_policy",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "retry",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "trusted-ready-same-base",
+      "schema_valid": false,
+      "public_requests_valid": null,
+      "expected_preflight": {
+        "status": "rejected",
+        "code": "unsupported_error_policy",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "draft_not_executable",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "draft",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "trusted-ready-same-base",
+      "schema_valid": true,
+      "public_requests_valid": true,
+      "expected_preflight": {
+        "status": "blocked",
+        "code": "draft_requires_review",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "generation_changed",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "session-generation-changed",
+      "schema_valid": true,
+      "public_requests_valid": true,
+      "expected_preflight": {
+        "status": "blocked",
+        "code": "context_unavailable",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "runtime_ambiguous_target",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "trusted-ready-same-base",
+      "schema_valid": true,
+      "public_requests_valid": true,
+      "expected_preflight": {
+        "status": "ready",
+        "code": null,
+        "dispatch_count": 0
+      },
+      "expected_runtime": {
+        "status": "stopped",
+        "reason": "ambiguous_target",
+        "mutation_dispatched": false
+      }
+    },
+    {
+      "name": "table_without_identity",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "table",
+            "tool": "test_table",
+            "arguments": {
+              "action": "select",
+              "params": {
+                "row": {
+                  "where": [
+                    {
+                      "column": "Код",
+                      "equals": "1"
+                    }
+                  ]
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Таблица"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "table-identity-unproven",
+      "schema_valid": true,
+      "public_requests_valid": true,
+      "expected_preflight": {
+        "status": "blocked",
+        "code": "capability_unknown",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    },
+    {
+      "name": "runtime_unknown_after_write",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "trusted-ready-same-base",
+      "schema_valid": true,
+      "public_requests_valid": true,
+      "expected_preflight": {
+        "status": "ready",
+        "code": null,
+        "dispatch_count": 0
+      },
+      "expected_runtime": {
+        "status": "unknown",
+        "automatic_replay": false,
+        "next_step_dispatched": false
+      }
+    },
+    {
+      "name": "runtime_binding_in_template",
+      "template": {
+        "version": 1,
+        "scenario_id": "enter-marker",
+        "revision": 1,
+        "state": "reviewed",
+        "parameters": {
+          "marker": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "data_scope": {
+          "policy_id": "fixture-only",
+          "purpose": "Enter a synthetic marker in the test form",
+          "mutation": "ui_write"
+        },
+        "steps": [
+          {
+            "step_id": "input",
+            "tool": "test_input",
+            "arguments": {
+              "action": "text",
+              "params": {
+                "text": {
+                  "$param": "marker"
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              },
+              "session_id": "old-session"
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          },
+          {
+            "step_id": "verify",
+            "tool": "test_expect",
+            "arguments": {
+              "params": {
+                "condition": {
+                  "property": "value",
+                  "operator": "equals",
+                  "value": {
+                    "$param": "marker"
+                  }
+                }
+              },
+              "window": {
+                "selector": {
+                  "title": "Action Fixture"
+                }
+              },
+              "element": {
+                "selector": {
+                  "name": "Текст"
+                }
+              }
+            },
+            "on_error": "stop",
+            "timeout_ms": 10000
+          }
+        ]
+      },
+      "parameters": {
+        "marker": "SCENARIO:111"
+      },
+      "context_case": "trusted-ready-same-base",
+      "schema_valid": false,
+      "public_requests_valid": null,
+      "expected_preflight": {
+        "status": "rejected",
+        "code": "forbidden_runtime_binding",
+        "dispatch_count": 0
+      },
+      "expected_runtime": null
+    }
+  ]
+}

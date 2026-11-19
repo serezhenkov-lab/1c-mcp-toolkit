@@ -1,0 +1,19 @@
+{
+  "task": "TASK-017/7.1",
+  "platform": "8.5.1.1529",
+  "document": "Документ.T43_Required",
+  "required_attribute": "ОбязательноеПоле",
+  "required_type": "String(100)",
+  "posting": "Deny",
+  "number": "T71 + first 8 hexadecimal characters of a fresh UUID; collision must abort",
+  "marker": "TASK071: + full fresh UUID",
+  "date": "2026-11-14T12:00:00",
+  "initial_required_value": "",
+  "expected_required_value": "marker",
+  "expected_count_after_write": 1,
+  "expected_deletion_mark": false,
+  "preflight_write_mode": "single server transaction, always rolled back",
+  "preflight_cleanup": "rollback and query by run number/date; expect zero",
+  "ui_acceptance_cleanup": "not verified; use an agreed separate disposable database or an authorized cleanup procedure before committing UI writes",
+  "scope": "file database preflight only; not six-route UI acceptance"
+}

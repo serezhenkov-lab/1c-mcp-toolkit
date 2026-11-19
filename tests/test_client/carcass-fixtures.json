@@ -1,0 +1,30 @@
+{
+  "database": ".local/http-mvp/carcass-db",
+  "source": ".local/http-mvp/carcass-source",
+  "subsystem": "Subsystem.МВП",
+  "section_title": "Проверка интерфейса",
+  "existing_examples": {
+    "catalog": "Catalog.Номенклатура",
+    "document": "Document.ПриходнаяНакладная",
+    "document_date": "Дата",
+    "document_number": "СуммаПоДокументу",
+    "document_table": "СписокНоменклатуры",
+    "processor": "DataProcessor.ЗаполнениеГрафика",
+    "processor_form": "Обработка.ЗаполнениеГрафика.Форма.Форма",
+    "processor_command": "Заполнить",
+    "register": "InformationRegister.ГрафикиРаботы",
+    "settings_form": "Обработка.ЗаполнениеГрафика.Форма.Форма"
+  },
+  "missing_examples_retained": [
+    {"object": "Report.МВПОтчет", "reason": "В исходной конфигурации нет отчётов"},
+    {"object": "Constant.МВППараметр", "reason": "В исходной конфигурации нет констант; используется автоматически создаваемая форма платформы"}
+  ],
+  "infrastructure": ["Role.МВППолныеПрава", "Subsystem.МВП"],
+  "removed": [
+    "Catalog.МВПТовары", "Document.МВПДокумент", "DataProcessor.МВПОбработка",
+    "InformationRegister.МВПРегистр", "CommonModule.МВППодготовка", "CommonForm.МВПНастройки", "CommonForm.МВПКонстанта"
+  ],
+  "existing_form_adjustments": {
+    "DataProcessors/ЗаполнениеГрафика/Forms/Форма/Ext/Form.xml": "Два поля дат для существующего стандартного периода; бизнес-код обработки не изменён"
+  }
+}

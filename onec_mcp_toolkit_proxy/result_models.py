@@ -1,12 +1,37 @@
 """Общий формат ответа обработки для HTTP и файлового транспорта."""
-from typing import Any, Optional
-from pydantic import BaseModel
+from typing import Any, Optional, Literal
+from .operation_progress import valid_progress
+from pydantic import BaseModel, StrictInt, model_validator
 
 
 class CommandResult(BaseModel):
     """Result from 1C processing."""
     id: str
     success: bool
+    lifecycle_event: Optional[Literal['awaiting_approval', 'running', 'progress']] = None
+    lifecycle_seq: Optional[StrictInt] = None
+    progress: Optional[dict[str, Any]] = None
+    lifecycle_outcome: Optional[Literal['rejected', 'unknown']] = None
+    rejection_reason: Optional[Literal['mode_deny', 'user_declined', 'approval_stale']] = None
+
+    @model_validator(mode='after')
+    def validate_lifecycle(self):
+        if self.lifecycle_event is not None:
+            expected = 1 if self.lifecycle_event == 'awaiting_approval' else 2
+            valid = (self.lifecycle_seq is not None and 3 <= self.lifecycle_seq <= 100000 and valid_progress(self.progress)) if self.lifecycle_event == 'progress' else (self.lifecycle_seq == expected and self.progress is None)
+            if not valid or self.success or self.lifecycle_outcome or self.rejection_reason:
+                raise ValueError('Invalid lifecycle event')
+        elif self.lifecycle_seq is not None or self.progress is not None:
+            raise ValueError('Sequence requires lifecycle event')
+        if self.lifecycle_outcome == 'unknown':
+            if self.success or self.rejection_reason:
+                raise ValueError('Unknown requires failure without rejection reason')
+        elif self.lifecycle_outcome is not None:
+            if self.success or self.rejection_reason is None:
+                raise ValueError('Rejection requires failure and explicit reason')
+        elif self.rejection_reason is not None:
+            raise ValueError('Reason requires rejection outcome')
+        return self
     base: Optional[str] = None
     data: Optional[Any] = None
     schema: Optional[Any] = None
@@ -35,3 +60,7 @@ class CommandResult(BaseModel):
     overlay_failures: Optional[Any] = None
     capture_complete: Optional[Any] = None
     foreground_window: Optional[Any] = None
+    capture_target: Optional[Any] = None
+    target: Optional[Literal['toolkit', 'test_client']] = None
+    session_id: Optional[str] = None
+    image_anonymized: Optional[bool] = None

@@ -50,6 +50,7 @@ public:
 private:
     enum Methods {
         eMethodCaptureWindow = 0,  // CaptureWindow(scale_percent) → String (base64 PNG)
+        eMethodCaptureProcessWindow,
         eMethodLast
     };
 
@@ -65,7 +66,8 @@ private:
     bool CaptureMainWindow(int scale, bool showGrid, std::string& outB64,
                            int regionX = -1, int regionY = -1,
                            int regionW = -1, int regionH = -1,
-                           const std::string& highlightRects = "");
+                           const std::string& highlightRects = "",
+                           uint32_t targetPid = 0, const std::string& created = "");
 
 #ifdef _WINDOWS
     // sw, sh   — scaled image dimensions (for line positions)

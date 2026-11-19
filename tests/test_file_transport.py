@@ -50,6 +50,119 @@ class FileTransportTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.bridge.active, command_id)
         self.assertFalse((self.bridge.directory / (second + '.request.json')).exists())
 
+    async def claim(self, identifier):
+        path = self.bridge.directory / (identifier + '.request.json')
+        path.rename(self.bridge.directory / (identifier + '.running'))
+
+    async def test_restart_overtakes_only_after_claim_without_republishing_active(self):
+        active = await self.issue()
+        ordinary = await self.queue.add_command('test', 'get_metadata', {})
+        restart = await self.queue.add_command('test', 'restart_1c_session', {})
+        foreign = await self.queue.add_command('other', 'restart_1c_session', {})
+        await self.bridge.step()
+        self.assertIsNone(self.bridge.control)
+        await self.claim(active)
+        await self.bridge.step()
+        self.assertEqual(self.bridge.control, restart)
+        self.assertEqual(self.bridge.active, active)
+        for _ in range(3):
+            await self.bridge.step()
+        self.assertFalse((self.bridge.directory / (active + '.request.json')).exists())
+        self.assertTrue((self.bridge.directory / (active + '.running')).exists())
+        self.assertFalse((self.bridge.directory / (ordinary + '.request.json')).exists())
+        self.assertFalse((self.bridge.directory / (foreign + '.request.json')).exists())
+        self.assertIsNone(self.queue.get_command(ordinary).dispatched_at_monotonic)
+
+    async def test_restart_response_orders_keep_original_until_its_result(self):
+        for control_first in (True, False):
+            active = await self.issue()
+            await self.claim(active)
+            restart = await self.queue.add_command('test', 'restart_1c_session', {})
+            ordinary = await self.queue.add_command('test', 'get_metadata', {})
+            await self.bridge.step()
+            first, second = (restart, active) if control_first else (active, restart)
+            write_json(self.bridge.directory / (first + '.response.json'),
+                       {'id': first, 'success': True})
+            await self.bridge.step()
+            self.assertFalse((self.bridge.directory / (ordinary + '.request.json')).exists())
+            self.assertFalse((self.bridge.directory / (active + '.request.json')).exists())
+            write_json(self.bridge.directory / (second + '.response.json'),
+                       {'id': second, 'success': True})
+            await self.bridge.step()
+            self.assertEqual(self.bridge.active, ordinary)
+            write_json(self.bridge.directory / (ordinary + '.response.json'),
+                       {'id': ordinary, 'success': True})
+            await self.bridge.step()
+
+    async def test_rejected_restart_does_not_release_or_restart_active_again(self):
+        active = await self.issue()
+        await self.claim(active)
+        restart = await self.queue.add_command('test', 'restart_1c_session', {})
+        second_restart = await self.queue.add_command('test', 'restart_1c_session', {})
+        await self.bridge.step()
+        write_json(self.bridge.directory / (restart + '.response.json'),
+                   {'id': restart, 'success': False, 'error': 'restart denied'})
+        await self.bridge.step()
+        self.assertEqual(self.bridge.active, active)
+        self.assertIsNone(self.bridge.control)
+        self.assertFalse((self.bridge.directory / (second_restart + '.request.json')).exists())
+        self.assertTrue((self.bridge.directory / (active + '.running')).exists())
+
+    async def test_ambiguous_restart_publish_does_not_retry(self):
+        active = await self.issue()
+        await self.claim(active)
+        restart = await self.queue.add_command('test', 'restart_1c_session', {})
+        with patch('onec_mcp_toolkit_proxy.file_transport.write_json', side_effect=OSError('IO')) as write:
+            with self.assertRaises(OSError):
+                await self.bridge.step()
+            await self.bridge.step()
+            self.assertEqual(write.call_count, 1)
+        self.assertEqual(self.bridge.control, restart)
+        self.assertEqual(self.bridge.active, active)
+
+    async def test_timed_out_restart_is_not_delivered(self):
+        active = await self.issue()
+        await self.claim(active)
+        restart = await self.queue.add_command('test', 'restart_1c_session', {})
+        with self.assertRaises(asyncio.TimeoutError):
+            await self.queue.wait_for_result(restart, .001)
+        await self.bridge.step()
+        self.assertIsNone(self.bridge.control)
+        self.assertFalse((self.bridge.directory / (restart + '.request.json')).exists())
+
+    async def test_restart_does_not_interrupt_another_restart(self):
+        active = await self.queue.add_command('test', 'restart_1c_session', {})
+        await self.bridge.step()
+        await self.claim(active)
+        restart = await self.queue.add_command('test', 'restart_1c_session', {})
+        await self.bridge.step()
+        self.assertIsNone(self.bridge.control)
+        self.assertFalse((self.bridge.directory / (restart + '.request.json')).exists())
+
+    async def test_interrupted_durable_identity_survives_restart_result(self):
+        from onec_mcp_toolkit_proxy.operation_journal import OperationJournal
+        self.queue._journal = OperationJournal(Path(self.temp.name) / 'journal')
+        self.addCleanup(self.queue._journal.close)
+        active = await self.queue.add_operation('test', 'expect-key', 'test_expect', {'timeout_ms': 60000})
+        await self.bridge.step()
+        await self.claim(active)
+        restart = await self.queue.add_command('test', 'restart_1c_session', {})
+        await self.bridge.step()
+        write_json(self.bridge.directory / (restart + '.response.json'),
+                   {'id': restart, 'success': True})
+        await self.bridge.step()
+        self.assertEqual(self.queue.operation_store().snapshot('test', active)['status'], 'running')
+        self.assertTrue((self.bridge.directory / (active + '.running')).exists())
+        write_json(self.bridge.directory / (active + '.response.json'),
+                   {'id': active, 'success': False, 'lifecycle_outcome': 'unknown'})
+        await self.bridge.step()
+        self.assertEqual(self.queue.operation_store().snapshot('test', active)['status'], 'unknown')
+        repeated = await self.queue.add_operation('test', 'expect-key', 'test_expect', {'timeout_ms': 60000})
+        self.assertEqual(repeated, active)
+        await self.bridge.step()
+        self.assertIsNone(self.bridge.active)
+        self.assertFalse((self.bridge.directory / (active + '.request.json')).exists())
+
     async def test_source_metadata_preserves_absent_null_and_value(self):
         for metadata in ({}, {'base': None}, {'base': 'test-base'}):
             with self.subTest(metadata=metadata):

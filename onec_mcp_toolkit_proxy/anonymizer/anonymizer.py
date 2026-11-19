@@ -7,6 +7,7 @@ from .token_mapper import TokenMapper
 from .value_detector import ValueDetector, replace_json_string_values
 from .dictionary_matcher import DictionaryMatcher, DICT_APPLY_KEY_SUBSTRINGS
 from .technical_fragments import technical_spans, map_unprotected, tokenize_content
+from .test_client_data import TEST_CLIENT_TOOLS, transform_response, detokenize_request
 from ..config import settings
 from .anonymization_defaults import (
     COUNTERPARTY_TYPE_MARKERS,
@@ -88,6 +89,10 @@ class Anonymizer:
         """Anonymize the full 1C response, not just result['data'].""" 
         if not isinstance(result, dict):
             return result
+        if tool_name in TEST_CLIENT_TOOLS:
+            return transform_response(result, lambda value, key: self._walk(
+                value, parent_key=key, allow_ner=self._allow_ner_for_top_level_key(key, tool_name),
+                force_dict_apply=True), include_errors=self._include_errors)
         source_last_hints_by_key: Dict[str, Tuple[str, ...]] = {}
         column_policy_by_key: Dict[str, Dict[str, Any]] = {}
         if tool_name == "execute_query":
@@ -327,6 +332,8 @@ class Anonymizer:
 
     def detokenize_params_for_tool(self, params: Dict[str, Any], tool: str) -> Dict[str, Any]:
         """De-tokenize params with tool-specific quote escaping for code/query fields."""
+        if tool in TEST_CLIENT_TOOLS:
+            return detokenize_request(params, self._mapper.detokenize)
         entry = self._CODE_FIELDS.get(tool)
         if entry is None:
             return self._walk_detokenize(params)
