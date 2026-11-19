@@ -1,0 +1,38 @@
+{
+  "task": "12.2",
+  "status": "partial",
+  "local_tests_passed": 10,
+  "native_api_probe": "20261116T115112",
+  "runner_checks": {
+    "run": "20261116T115222",
+    "passed": 4
+  },
+  "platform": "8.5.1.1529",
+  "mode": "file-http",
+  "remaining": [
+    "trusted_product_reader",
+    "verified_native_units",
+    "nonzero_step_delta",
+    "client_server",
+    "native_reset_or_restart_attribution"
+  ],
+  "tasks_done": 13,
+  "tasks_total": 42,
+  "runner_regression": {
+    "passed": 12,
+    "reason": "changed common ScenarioRunner execution path"
+  },
+  "validation": {
+    "openspec_strict": true,
+    "ast": true,
+    "links": true,
+    "git_diff_check": true
+  },
+  "archived_failed_setup": {
+    "registry_from_project_root": ".cleanup-archive/2026-11-19/registry.json",
+    "source_paths": [
+      "openspec/changes/upravlenie-test-klientom/evidence/step-metrics/20261116T114615",
+      "openspec/changes/upravlenie-test-klientom/evidence/step-metrics/20261116T114901"
+    ]
+  }
+}
